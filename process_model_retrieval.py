@@ -6,7 +6,8 @@ from pm4py.objects.log.obj import EventLog
 from response_model import Connection, Graph
 
 
-def get_process_model(data: EventLog|pd.DataFrame) -> Graph:
+def get_process_model(input_data: EventLog|pd.DataFrame) -> Graph:
+    data = input_data.copy()
     performance_pm = pm4py.discovery.discover_performance_dfg(data)
     frequency_pm = pm4py.discovery.discover_dfg(data)
     if performance_pm[1] != frequency_pm[1] or performance_pm[2] != frequency_pm[2]:

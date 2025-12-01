@@ -23,14 +23,23 @@ class TimeBetweenEvents(BaseModel):
     e2: str
     time: str
 
+
+class ActiveEvents(BaseModel):
+    yearly: dict[str, int]
+    monthly: dict[str, int]
+    weekly: dict[str, int]
+
 class Metrics(BaseModel):
     n_cases: int
     n_events: int
     n_variants: int
     top_variants: dict[str, list[str]]
-    tbe: list[TimeBetweenEvents]
+    tbe: list[Connection]
     max_trace_length: int
     min_trace_length: int
+    max_trace_duration: float
+    min_trace_duration: float
+    active_events: ActiveEvents
     event_frequency_distr: dict[str, int]
 
 
