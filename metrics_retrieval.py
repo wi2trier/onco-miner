@@ -3,8 +3,13 @@ from datetime import timedelta, datetime
 import numpy as np
 import pandas as pd
 import pm4py
+import pytz
 from dateutil.relativedelta import relativedelta
 from pm4py.statistics.variants.pandas.get import get_variants_count
+
+
+utc = pytz.UTC
+
 
 from response_model import Metrics, Connection, ActiveEvents
 
@@ -70,8 +75,8 @@ def calculate_monthly_bins(initial_timestamp: datetime, final_timestamp: datetim
 
 
 def calculate_yearly_bins(initial_timestamp: datetime, final_timestamp: datetime) -> list[datetime]:
-    start_of_year = datetime(initial_timestamp.year, 1, 1)
-    year_starts = [start_of_year]
+    start_of_year = datetime(initial_timestamp.year, 1, 1).replace(tzinfo=utc)
+    year_starts = []
     while start_of_year <= final_timestamp:
         year_starts.append(start_of_year)
         start_of_year = start_of_year + relativedelta(years=1)
@@ -86,7 +91,7 @@ def calculate_bin_values(data: pd.DataFrame, bin_starts: list[datetime]) -> dict
     n_bins = len(bin_starts)
     active_events = 0
     for i, bin_start in enumerate(bin_starts):
-        bin_end = bin_starts[i + 1] if i < n_bins else datetime.now()
+        bin_end = bin_starts[i + 1] if i < n_bins - 1 else datetime.now().replace(tzinfo=utc)
         pre_bin_start = bin_starts[i - 1] if i > 0 else bin_start - timedelta(days=1)
         bin_data = data[data["time:timestamp"].between(bin_start, bin_end, inclusive="left")]
         pre_bin_data = data[data["time:timestamp"].between(pre_bin_start, bin_start, inclusive="left")]
