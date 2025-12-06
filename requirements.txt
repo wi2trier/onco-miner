@@ -1,3 +1,10 @@
 fastapi
 pandas
 pm4py
+pydantic
+pydantic-core
+numpy
+python-dateutil
+pytz
+requests
+uvicorn

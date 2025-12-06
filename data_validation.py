@@ -6,6 +6,11 @@ expected_features = ["concept:name", "case:concept:name", "time:timestamp"]
 
 
 def datetime_valid(dt_str: str) -> bool:
+    """
+    Checks if a string meets the ISO 8601 datetime format.
+    :param dt_str: String to check.
+    :return: true if the string meets the ISO 8601 datetime format, else false.
+    """
     try:
         datetime.fromisoformat(dt_str.replace('Z', '+00:00'))
     except ValueError:
@@ -55,7 +60,8 @@ def validate_data(data: dict[str, dict[str, str]]) -> dict[str, dict[str, str]]:
     loaded_data = pd.DataFrame.from_dict(data)[["case:concept:name", "time:timestamp"]]
     loaded_data["time:timestamp"] = loaded_data["time:timestamp"].apply(lambda x: pd.to_datetime(x))
     grouped_data = loaded_data.groupby("case:concept:name").agg({"time:timestamp": list})
-    grouped_data["sorted?"] = grouped_data["time:timestamp"].apply(lambda val: all(val[i] <= val[i + 1] for i in range(len(val) - 1)))
+    grouped_data["sorted?"] = grouped_data["time:timestamp"].apply(
+        lambda val: all(val[i] <= val[i + 1] for i in range(len(val) - 1)))
     if False in grouped_data["sorted?"]:
         raise ValueError("Events are not sorted.")
     return data

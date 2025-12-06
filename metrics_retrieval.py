@@ -1,4 +1,4 @@
-from datetime import timedelta, datetime
+from datetime import datetime, timedelta
 
 import numpy as np
 import pandas as pd
@@ -7,21 +7,21 @@ import pytz
 from dateutil.relativedelta import relativedelta
 from pm4py.statistics.variants.pandas.get import get_variants_count
 
+from input_model import ActiveEventParameters
+from response_model import ActiveEvents, Connection, Metrics
 
 utc = pytz.UTC
 
 
-from response_model import Metrics, Connection, ActiveEvents
-
-
-def get_time_between_events(top_variants, data: pd.DataFrame, grouped_data: pd.DataFrame) -> list[Connection]:
+def get_time_between_events(top_variants: list[tuple[list[str], int]], data: pd.DataFrame,
+                            grouped_data: pd.DataFrame) -> \
+        list[Connection]:
     """
-    To work, the given dataframe needs to already be sorted!
-    Sorting it again could lead to inconsistencies due to events occurring at the same time.
-    :param grouped_data:
-    :param top_variants:
-    :param data:
-    :return:
+    calculates statistics regarding the time between events of the top variants.
+    :param grouped_data: data grouped by 'case:concept:name' with 'concept:name' as list.
+    :param top_variants: list of the top variants with their frequency.
+    :param data: data on which grouped data is based.
+    :return: list of edges with statistics between events of the top variants.
     """
     top_variants_list = [list(x[0]) for x in top_variants]
     relevant_traces = grouped_data[grouped_data["concept:name"].isin(top_variants_list)]["case:concept:name"]
@@ -41,20 +41,43 @@ def get_time_between_events(top_variants, data: pd.DataFrame, grouped_data: pd.D
 
 
 def get_trace_lengths(grouped_data: pd.DataFrame) -> tuple[int, int]:
+    """
+    Calculates the amount of traces for the trace with the most and the least events in the data.
+    :param grouped_data: data grouped by 'case:concept:name' with 'concept:name' as list.
+    :return: tuple of minimum trace length, maximum trace length.
+    """
     trace_lengths = grouped_data["concept:name"].apply(lambda x: len(x))
     return trace_lengths.min(), trace_lengths.max()
 
 
 def get_trace_durations(grouped_data: pd.DataFrame) -> tuple[float, float]:
+    """
+    Calculates the time delta between start and end of the traces
+    with the maximum and minimum time delta respectively in the data.
+    :param grouped_data: data grouped by 'case:concept:name' with 'concept:name' as list.
+    :return: tuple of minimum time delta , maximum time delta in seconds.
+    """
     trace_durations = grouped_data["time:timestamp"].apply(lambda x: x[-1] - x[0])
     return trace_durations.min().total_seconds(), trace_durations.max().total_seconds()
 
 
 def get_event_frequency_distribution(data: pd.DataFrame) -> dict[str, int]:
+    """
+    Calculates the frequency of each event in the data.
+    :param data: Dataframe with 'concept:name' containing the event names.
+    :return: Dictionary with event as key and frequency as value.
+    """
     return data["concept:name"].value_counts().to_dict()
 
 
 def calculate_weekly_bins(initial_timestamp: datetime, final_timestamp: datetime) -> list[datetime]:
+    """
+    Calculates the start timestamp (Monday 00:00) for each week occurring in the time frame between the two timestamps.
+    The initial timestamp is included in the first week and final timestamp is included in the last week.
+    :param initial_timestamp: first timestamp.
+    :param final_timestamp: last timestamp.
+    :return: List of timestamps.
+    """
     start_of_week = initial_timestamp - timedelta(days=initial_timestamp.weekday())
     start_of_week.replace(hour=0, minute=0, second=0, microsecond=0)
     week_starts = [start_of_week]
@@ -65,6 +88,14 @@ def calculate_weekly_bins(initial_timestamp: datetime, final_timestamp: datetime
 
 
 def calculate_monthly_bins(initial_timestamp: datetime, final_timestamp: datetime) -> list[datetime]:
+    """
+    Calculates the start timestamp (1st of month, 00:00)
+    for each month occurring in the time frame between the two timestamps.
+    The initial timestamp is included in the first month and final timestamp is included in the last month.
+    :param initial_timestamp: first timestamp.
+    :param final_timestamp: last timestamp.
+    :return: List of timestamps.
+    """
     start_of_month = initial_timestamp - timedelta(days=initial_timestamp.day - 1)
     start_of_month.replace(hour=0, minute=0, second=0, microsecond=0)
     month_starts = [start_of_month]
@@ -75,6 +106,14 @@ def calculate_monthly_bins(initial_timestamp: datetime, final_timestamp: datetim
 
 
 def calculate_yearly_bins(initial_timestamp: datetime, final_timestamp: datetime) -> list[datetime]:
+    """
+    Calculates the start timestamp (January 1st, 00:00)
+    for each week occurring in the time frame between the two timestamps.
+    The initial timestamp is included in the first year and final timestamp is included in the last year.
+    :param initial_timestamp: first timestamp.
+    :param final_timestamp: last timestamp.
+    :return: List of timestamps.
+    """
     start_of_year = datetime(initial_timestamp.year, 1, 1).replace(tzinfo=utc)
     year_starts = []
     while start_of_year <= final_timestamp:
@@ -83,10 +122,20 @@ def calculate_yearly_bins(initial_timestamp: datetime, final_timestamp: datetime
     return year_starts
 
 
-def calculate_bin_values(data: pd.DataFrame, bin_starts: list[datetime]) -> dict[str, int]:
-    positive_events = []
-    negative_events = []
-    singular_events = []
+def calculate_bin_values(data: pd.DataFrame, bin_starts: list[datetime],
+                         active_event_parameters: ActiveEventParameters) -> dict[str, int]:
+    """
+    Calculates the amount of active events for each timeframe between two consecutive timestamps.
+    :param active_event_parameters: Parameters to calculate the active events per timeframe.
+    Consists of positive events, which mark the start of a specific timeframe bordered by two events,
+    of negative events, which mark the end of such a timeframe, and singular events.
+    :param data: Data from which the active events are calculated.
+    :param bin_starts: timestamps used as bin starts.
+    :return: Dictionary with timestamp as key and number of active events as value.
+    """
+    positive_events: list[str] = active_event_parameters.positive_events
+    negative_events: list[str] = active_event_parameters.negative_events
+    singular_events: list[str] = active_event_parameters.singular_events
     bin_dict = {}
     n_bins = len(bin_starts)
     active_events = 0
@@ -102,18 +151,37 @@ def calculate_bin_values(data: pd.DataFrame, bin_starts: list[datetime]) -> dict
     return bin_dict
 
 
-def get_binned_occurrences(data: pd.DataFrame) -> ActiveEvents:
+def get_binned_occurrences(data: pd.DataFrame, active_event_parameters: ActiveEventParameters) -> ActiveEvents:
+    """
+    Calculates the active events for weekly, monthly and yearly bins.
+    :param active_event_parameters: Parameters to calculate the active events per timeframe.
+    :param data: Data from which the active events as well as the timestamps are calculated.
+    :return: The calculated active events.
+    """
     initial_timestamp = data["time:timestamp"].min()
     final_timestamp = data["time:timestamp"].max()
-    return ActiveEvents(yearly=calculate_bin_values(data, calculate_yearly_bins(initial_timestamp, final_timestamp)),
-                        monthly=calculate_bin_values(data, calculate_monthly_bins(initial_timestamp, final_timestamp)),
-                        weekly=calculate_bin_values(data, calculate_weekly_bins(initial_timestamp, final_timestamp)))
+    return ActiveEvents(yearly=calculate_bin_values(data, calculate_yearly_bins(initial_timestamp, final_timestamp),
+                                                    active_event_parameters),
+                        monthly=calculate_bin_values(data, calculate_monthly_bins(initial_timestamp, final_timestamp),
+                                                     active_event_parameters),
+                        weekly=calculate_bin_values(data, calculate_weekly_bins(initial_timestamp, final_timestamp),
+                                                    active_event_parameters))
 
 
-def get_metrics(data: pd.DataFrame, n_top_variants: int = 10) -> Metrics:
+def get_metrics(data: pd.DataFrame, active_event_parameters: ActiveEventParameters,
+                n_top_variants: int = 10) -> Metrics:
+    """
+    Calculates the metrics for a given dataset.
+    :param active_event_parameters: Parameters to calculate the active events per timeframe.
+    :param data: Data from which the metrics are calculated.
+    Should have three columns, 'case:concept:name', 'concept:name' and 'time:timestamp'.
+    :param n_top_variants: Amount of top variants that should be included in the variant dependent metrics.
+    :return: calculated metrics.
+    """
     grouped_data = data.groupby("case:concept:name", as_index=False).agg({"concept:name": list, "time:timestamp": list})
-    variants = get_variants_count(data)
-    top_variants = list(sorted(variants.items(), key=lambda item: item[1], reverse=True))[0:n_top_variants]
+    variants: dict[list[str], int] = get_variants_count(data)
+    top_variants: list[tuple[list[str], int]] = list(sorted(variants.items(), key=lambda item: item[1], reverse=True))[
+        0:n_top_variants]
     top_variants_dict = {}
     tbe = get_time_between_events(top_variants, data, grouped_data)
     min_trace_length, max_trace_length = get_trace_lengths(grouped_data)
@@ -126,5 +194,5 @@ def get_metrics(data: pd.DataFrame, n_top_variants: int = 10) -> Metrics:
                       min_trace_length=min_trace_length,
                       event_frequency_distr=get_event_frequency_distribution(data),
                       max_trace_duration=max_trace_duration, min_trace_duration=min_trace_duration,
-                      active_events=get_binned_occurrences(data))
+                      active_events=get_binned_occurrences(data, active_event_parameters))
     return metrics
