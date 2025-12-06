@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from data_transformation import transform_dict
 from data_validation import validate_data
 from input_model import InputBody
-from metrics_retrieval import get_metrics
+from metrics_retrieval import get_metrics, get_metrics_in_parallel
 from process_model_retrieval import get_process_model
 from response_model import DiscoveryResponse
 
@@ -51,9 +51,9 @@ async def discover_process_model(request: InputBody) -> DiscoveryResponse:
     event_log = transform_dict(request.data)
     graph = get_process_model(event_log)
     if request.parameters.n_top_variants:
-        metrics = get_metrics(event_log, request.parameters.active_events, request.parameters.n_top_variants)
+        metrics = get_metrics_in_parallel(event_log, request.parameters.active_events, request.parameters.n_top_variants)
     else:
-        metrics = get_metrics(event_log, request.parameters.active_events)
+        metrics = get_metrics_in_parallel(event_log, request.parameters.active_events)
     creation_time = str(datetime.now())
     response = DiscoveryResponse(graph=graph, metrics=metrics, created=creation_time, id="None")
     if request.callback_url is not None:

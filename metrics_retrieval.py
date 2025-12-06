@@ -1,3 +1,5 @@
+import time
+from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime, timedelta
 
 import numpy as np
@@ -11,6 +13,7 @@ from input_model import ActiveEventParameters
 from response_model import ActiveEvents, Connection, Metrics
 
 utc = pytz.UTC
+executor = ProcessPoolExecutor(max_workers=8)
 
 
 def get_time_between_events(top_variants: list[tuple[list[str], int]], data: pd.DataFrame,
@@ -23,6 +26,7 @@ def get_time_between_events(top_variants: list[tuple[list[str], int]], data: pd.
     :param data: data on which grouped data is based.
     :return: list of edges with statistics between events of the top variants.
     """
+    time.sleep(3)
     top_variants_list = [list(x[0]) for x in top_variants]
     relevant_traces = grouped_data[grouped_data["concept:name"].isin(top_variants_list)]["case:concept:name"]
     relevant_data = data[data["case:concept:name"].isin(relevant_traces)]
@@ -133,6 +137,7 @@ def calculate_bin_values(data: pd.DataFrame, bin_starts: list[datetime],
     :param bin_starts: timestamps used as bin starts.
     :return: Dictionary with timestamp as key and number of active events as value.
     """
+    time.sleep(3)
     positive_events: list[str] = active_event_parameters.positive_events
     negative_events: list[str] = active_event_parameters.negative_events
     singular_events: list[str] = active_event_parameters.singular_events
@@ -160,12 +165,13 @@ def get_binned_occurrences(data: pd.DataFrame, active_event_parameters: ActiveEv
     """
     initial_timestamp = data["time:timestamp"].min()
     final_timestamp = data["time:timestamp"].max()
-    return ActiveEvents(yearly=calculate_bin_values(data, calculate_yearly_bins(initial_timestamp, final_timestamp),
+    active_events = ActiveEvents(yearly=calculate_bin_values(data, calculate_yearly_bins(initial_timestamp, final_timestamp),
                                                     active_event_parameters),
                         monthly=calculate_bin_values(data, calculate_monthly_bins(initial_timestamp, final_timestamp),
                                                      active_event_parameters),
                         weekly=calculate_bin_values(data, calculate_weekly_bins(initial_timestamp, final_timestamp),
                                                     active_event_parameters))
+    return active_events
 
 
 def get_metrics(data: pd.DataFrame, active_event_parameters: ActiveEventParameters,
@@ -195,4 +201,29 @@ def get_metrics(data: pd.DataFrame, active_event_parameters: ActiveEventParamete
                       event_frequency_distr=get_event_frequency_distribution(data),
                       max_trace_duration=max_trace_duration, min_trace_duration=min_trace_duration,
                       active_events=get_binned_occurrences(data, active_event_parameters))
+    return metrics
+
+def get_metrics_in_parallel(data: pd.DataFrame, active_event_parameters: ActiveEventParameters, n_top_variants: int = 10) -> Metrics:
+    grouped_data = data.groupby("case:concept:name", as_index=False).agg({"concept:name": list, "time:timestamp": list})
+    variants: dict[list[str], int] = get_variants_count(data)
+    top_variants: list[tuple[list[str], int]] = list(sorted(variants.items(), key=lambda item: item[1], reverse=True))[
+        0:n_top_variants]
+    top_variants_dict = {}
+    min_trace_length, max_trace_length = get_trace_lengths(grouped_data)
+    min_trace_duration, max_trace_duration = get_trace_durations(grouped_data)
+    running_tasks = {
+        "get_binned_occurrences": executor.submit(get_binned_occurrences, data, active_event_parameters),
+        "get_time_between_events": executor.submit(get_time_between_events, top_variants, data, grouped_data)}
+    active_events = running_tasks["get_binned_occurrences"].result()
+    tbe = running_tasks["get_time_between_events"].result()
+    event_frequency_distr = get_event_frequency_distribution(data)
+
+    for index, variant in enumerate(top_variants):
+        top_variants_dict[str(index)] = list(variant[0])
+    metrics = Metrics(n_cases=data["case:concept:name"].nunique(), n_events=len(data), n_variants=len(variants),
+                      top_variants=top_variants_dict, tbe=tbe, max_trace_length=max_trace_length,
+                      min_trace_length=min_trace_length,
+                      event_frequency_distr=event_frequency_distr,
+                      max_trace_duration=max_trace_duration, min_trace_duration=min_trace_duration,
+                      active_events=active_events)
     return metrics

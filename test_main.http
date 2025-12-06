@@ -2,6 +2,65 @@ POST http://127.0.0.1:8000/discover
 Content-Type: application/json
 
 {
+  "parameters": {
+    "active_events": {
+      "positive_events": [
+        "Leucocytes",
+        "CRP",
+        "LacticAcid",
+        "Admission NC",
+        "ER Triage",
+        "ER Registration",
+        "ER Sepsis Triage",
+        "IV Antibiotics",
+        "IV Liquid",
+        "Release A",
+        "Return ER",
+        "Admission IC",
+        "Release B",
+        "Release C",
+        "Release D",
+        "Release E"
+      ],
+      "negative_events": [
+        "Leucocytes",
+        "CRP",
+        "LacticAcid",
+        "Admission NC",
+        "ER Triage",
+        "ER Registration",
+        "ER Sepsis Triage",
+        "IV Antibiotics",
+        "IV Liquid",
+        "Release A",
+        "Return ER",
+        "Admission IC",
+        "Release B",
+        "Release C",
+        "Release D",
+        "Release E"
+      ],
+      "singular_events": [
+        "Leucocytes",
+        "CRP",
+        "LacticAcid",
+        "Admission NC",
+        "ER Triage",
+        "ER Registration",
+        "ER Sepsis Triage",
+        "IV Antibiotics",
+        "IV Liquid",
+        "Release A",
+        "Return ER",
+        "Admission IC",
+        "Release B",
+        "Release C",
+        "Release D",
+        "Release E"
+      ]
+    },
+    "n_top_variants": 10
+  },
   "data": {
     "case:concept:name": {
       "0": "A",
