@@ -5,6 +5,7 @@ import pandas as pd
 import pm4py
 import pytz
 from dateutil.relativedelta import relativedelta
+from pandas.core.groupby import DataFrameGroupBy
 from pm4py.statistics.variants.pandas.get import get_variants_count
 
 from input_model import ActiveEventParameters
@@ -40,25 +41,28 @@ def get_time_between_events(top_variants: list[tuple[list[str], int]], data: pd.
     return result_list
 
 
-def get_trace_lengths(grouped_data: pd.DataFrame) -> tuple[int, int]:
+def get_trace_lengths(data: pd.DataFrame) -> tuple[int, int]:
     """
     Calculates the amount of traces for the trace with the most and the least events in the data.
-    :param grouped_data: data grouped by 'case:concept:name' with 'concept:name' as list.
+    :param data: data to be used to calculate the lengths.
     :return: tuple of minimum trace length, maximum trace length.
     """
-    trace_lengths = grouped_data["concept:name"].apply(lambda x: len(x))
+    trace_lengths = data["case:concept:name"].value_counts()
     return trace_lengths.min(), trace_lengths.max()
 
 
-def get_trace_durations(grouped_data: pd.DataFrame) -> tuple[float, float]:
+def get_trace_durations(grouped_data:  DataFrameGroupBy) -> tuple[float, float]:
     """
     Calculates the time delta between start and end of the traces
     with the maximum and minimum time delta respectively in the data.
     :param grouped_data: data grouped by 'case:concept:name' with 'concept:name' as list.
     :return: tuple of minimum time delta , maximum time delta in seconds.
     """
-    trace_durations = grouped_data["time:timestamp"].apply(lambda x: x[-1] - x[0])
-    return trace_durations.min().total_seconds(), trace_durations.max().total_seconds()
+
+    min_values = grouped_data.min()["time:timestamp"]
+    max_values = grouped_data.max()["time:timestamp"]
+    difference = max_values - min_values
+    return difference.min().total_seconds(), difference.max().total_seconds()
 
 
 def get_event_frequency_distribution(data: pd.DataFrame) -> dict[str, int]:
@@ -160,12 +164,14 @@ def get_binned_occurrences(data: pd.DataFrame, active_event_parameters: ActiveEv
     """
     initial_timestamp = data["time:timestamp"].min()
     final_timestamp = data["time:timestamp"].max()
-    return ActiveEvents(yearly=calculate_bin_values(data, calculate_yearly_bins(initial_timestamp, final_timestamp),
-                                                    active_event_parameters),
-                        monthly=calculate_bin_values(data, calculate_monthly_bins(initial_timestamp, final_timestamp),
-                                                     active_event_parameters),
-                        weekly=calculate_bin_values(data, calculate_weekly_bins(initial_timestamp, final_timestamp),
-                                                    active_event_parameters))
+    active_events = ActiveEvents(
+        yearly=calculate_bin_values(data, calculate_yearly_bins(initial_timestamp, final_timestamp),
+                                    active_event_parameters),
+        monthly=calculate_bin_values(data, calculate_monthly_bins(initial_timestamp, final_timestamp),
+                                     active_event_parameters),
+        weekly=calculate_bin_values(data, calculate_weekly_bins(initial_timestamp, final_timestamp),
+                                    active_event_parameters))
+    return active_events
 
 
 def get_metrics(data: pd.DataFrame, active_event_parameters: ActiveEventParameters,
@@ -178,13 +184,14 @@ def get_metrics(data: pd.DataFrame, active_event_parameters: ActiveEventParamete
     :param n_top_variants: Amount of top variants that should be included in the variant dependent metrics.
     :return: calculated metrics.
     """
-    grouped_data = data.groupby("case:concept:name", as_index=False).agg({"concept:name": list, "time:timestamp": list})
+    grouped_data = data.groupby("case:concept:name", as_index=False)
+    aggregated_data = grouped_data.agg({"concept:name": list, "time:timestamp": list})
     variants: dict[list[str], int] = get_variants_count(data)
     top_variants: list[tuple[list[str], int]] = list(sorted(variants.items(), key=lambda item: item[1], reverse=True))[
         0:n_top_variants]
     top_variants_dict = {}
-    tbe = get_time_between_events(top_variants, data, grouped_data)
-    min_trace_length, max_trace_length = get_trace_lengths(grouped_data)
+    tbe = get_time_between_events(top_variants, data, aggregated_data)
+    min_trace_length, max_trace_length = get_trace_lengths(data)
     min_trace_duration, max_trace_duration = get_trace_durations(grouped_data)
 
     for index, variant in enumerate(top_variants):

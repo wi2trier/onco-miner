@@ -18,7 +18,8 @@ class ResponseReceived(BaseModel):
 
 
 app = FastAPI(title="PROVIS cnco-miner API",
-              description="This API is part of a project to provide an process model based view on cancer patient data.",
+              description="This API is part of a project"
+                          " to provide an process model based view on cancer patient data.",
               version="1.0.0",
               contact={
                   "name": "Eric Brake",

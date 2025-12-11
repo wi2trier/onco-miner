@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from pydantic_core import Url
 
+
 class ActiveEventParameters(BaseModel):
     positive_events: list[str]
     negative_events: list[str]

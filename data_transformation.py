@@ -1,3 +1,4 @@
+import json
 
 import pandas as pd
 
@@ -9,5 +10,11 @@ def transform_dict(data: dict[str, dict[str, str]]) -> pd.DataFrame:
     :return: DataFrame.
     """
     loaded_data = pd.DataFrame.from_dict(data)
-    loaded_data["time:timestamp"] = loaded_data["time:timestamp"].apply(lambda x: pd.to_datetime(x))
+    loaded_data["time:timestamp"] = pd.to_datetime(loaded_data["time:timestamp"], format = "ISO8601")
     return loaded_data
+
+if __name__ == "__main__":
+    with open('test_logs/sepsis.json') as f:
+        json_data = json.load(f)
+    transformed_data = transform_dict(json_data)
+    print(list(transformed_data["concept:name"].value_counts().index))
