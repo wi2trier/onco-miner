@@ -30,34 +30,80 @@ Transparent and reproducible analysis of real oncology care pathways helps impro
 
 ### Expected input Format
 
-The data should be provided as a json dict with the following structure:
+The Input should be provided as a json dict with the following structure:
+
+    {
+        "data":
+        {
+            "concept:name": 
+            {
+                "1": "StartEventA",
+                "2": "EventB",
+                "3": "EndEventA",
+                "4": "EventB"
+            },
+            "case:concept:name":
+            {
+                "1": "Trace1",
+                "2": "Trace1",
+                "3": "Trace1",
+                "4": "Trace2"
+            },
+            "time:timestamp":
+            {
+                "1": "2025-10-17T11:45:23Z",
+                "2": "2025-10-18T23:48:05Z",
+                "3": "2025-10-121T12:37:09Z",
+                "4": "2024-08-12T08:27:12Z"
+            }
+        }
+        "parameters":
+        {
+            "active_events":
+            {
+                "positive_events": ["StartEventA"],
+                "negative_events": ["EndEventA"],
+                "singular_events": ["EventB"]
+            },
+            "n_top_variants": 10
+        }
+        "callback_url": "https://example.com/",
+        "id": "string"
+    }
+
+
+Concerning the **data**:
 
 Each event should have an index, a trace name, an event name and a time stamp in the ISO8601 standard.
 
-The data in the following Example consists of two traces, "Trace1" and "Trace2".
-"Trace1" consists of two events, "EventA" (2025-10-17T11:45:23Z) and "EventB" (2025-10-18T23:48:05Z).
-"Trace2" consists of one event, "EventB" (2024-08-12T08:27:12Z).
+The **data** in the following Example consists of two traces, _Trace1_ and _Trace2_.
 
-    {
-        "concept:name": 
-        {
-            "1": "EventA",
-            "2": "EventB",
-            "3": "EventB"
-        },
-        "case:concept:name":
-        {
-            "1": "Trace1",
-            "2": "Trace1",
-            "3": "Trace2"
-        },
-        "time:timestamp":
-        {
-            "1": "2025-10-17T11:45:23Z",
-            "2": "2025-10-18T23:48:05Z",
-            "3": "2024-08-12T08:27:12Z"
-        }
-    }
+_Trace1_ consists of three events, _StartEventA (2025-10-17T11:45:23Z)_, _EventB (2025-10-18T23:48:05Z)_
+and _EndEventA (2025-10-121T12:37:09Z)_.
+_StartEventA_ and _EndEventA_ are used to describe a state change,
+where _state A_ is described through its start and its end.
+
+_Trace2_ consists of one event, _EventB (2024-08-12T08:27:12Z)_.
+
+Concerning the **Parameters**:
+
+_active_events_ should be a dictionary containing three keys, _positive_events_, _negative_events_ and _singular_events_.
+The values of these dicts should be lists with event names occurring in the data.
+_positive_events_ should contain events that describe the beginning of a state or a long-lasting events.
+_negative_events_ should contain events that describe the ending of a state or a long-lasting events.
+_singular_events_ should contain events occurring at a singular moment.
+
+Some metrics are calculated not with all data, but only traces that match the most often occurring variants.
+To set, how many variants should be considered, use _top_variants_.
+
+Concerning the **callback_url**:
+
+If you want the result graph not only to be returned to the requesting instance, but to another endpoint as well,
+you can provide a url where the result construct will be sent.
+
+Concerning the **id**:
+If you want an ID to identify a result, especially if the callback feature ist used, you can provide an ID with the request.
+This ID will then be returned with the result.
 
 ### Output Format
 
@@ -101,15 +147,34 @@ The data in the following Example consists of two traces, "Trace1" and "Trace2".
                 {
                     "e1": str,
                     "e2": str,
-                    "time": str
+                    "frequency": -1,
+                    "median": float,
+                    "min": float,
+                    "max": float,
+                    "stdev": float,
+                    "sum": float,
+                    "mean": float
                 }
             ],
-            "events_p_timeframe":
+            "active_events":
             {
-                "{start_time}": int
+                "yearly":
+                {
+                    "{start_time}": int
+                },
+                "monthly":
+                {
+                    "{start_time}": int
+                },
+                "weekly":
+                {
+                    "{start_time}": int
+                }
             },
             "max_trace_length": int,
-            "min_trace-length": int,
+            "min_trace_length": int,
+            "max_trace_duration": float,
+            "min_trace_duration": float,
             "event_frequency_distr":
             {
                 "{event_name}": int,
