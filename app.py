@@ -5,7 +5,7 @@ import uvicorn
 from fastapi import APIRouter, FastAPI, HTTPException
 from pydantic import BaseModel
 
-from data_transformation import transform_dict, add_counts, add_states
+from data_transformation import add_counts, add_states, transform_dict
 from data_validation import validate_data
 from input_model import InputBody
 from metrics_retrieval import get_metrics

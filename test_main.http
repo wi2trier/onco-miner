@@ -4,6 +4,7 @@ Content-Type: application/json
 {
   "parameters": {
     "add_counts": false,
+    "state_changing_events": ["IV Antibiotics"],
     "active_events": {
       "positive_events": [
         "Leucocytes",
