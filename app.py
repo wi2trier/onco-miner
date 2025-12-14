@@ -6,7 +6,7 @@ from fastapi import APIRouter, FastAPI, HTTPException
 from pydantic import BaseModel
 
 from complexity_reduction import reduce_dataframe
-from data_transformation import transform_dict
+from data_transformation import add_counts, add_states, transform_dict
 from data_validation import validate_data
 from input_model import InputBody
 from metrics_retrieval import get_metrics
@@ -46,15 +46,22 @@ async def discover_process_model(request: InputBody) -> DiscoveryResponse:
     :param request: Input data as well as necessary parameters and an id that will be returned with the result.
     :return: Calculated Process Model, metrics, creation time and id provided in the request.
     """
+    params = request.parameters
     try:
         validate_data(request.data)
     except (ValueError, TypeError) as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
+    if params.add_counts and params.state_changing_events:
+        raise HTTPException(status_code=400, detail="Can not have states and counts at the same time.")
     event_log = transform_dict(request.data)
-    if request.parameters.reduce_complexity_by:
-        pm_event_log = reduce_dataframe(event_log, 1 - request.parameters.reduce_complexity_by)
+    if params.reduce_complexity_by:
+        pm_event_log = reduce_dataframe(event_log, 1 - params.reduce_complexity_by)
     else:
         pm_event_log = event_log
+    if params.add_counts:
+        pm_event_log = add_counts(pm_event_log)
+    elif params.state_changing_events:
+        pm_event_log = add_states(pm_event_log, params.state_changing_events)
     graph = get_process_model(pm_event_log)
     if request.parameters.n_top_variants:
         metrics = get_metrics(event_log, request.parameters.active_events, request.parameters.n_top_variants)
