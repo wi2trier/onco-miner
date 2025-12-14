@@ -10,6 +10,8 @@ class ActiveEventParameters(BaseModel):
 class InputParameters(BaseModel):
     active_events: ActiveEventParameters
     n_top_variants: int | None
+    add_counts: bool | None = False
+    state_changing_events: list[str] | None
 
 class InputBody(BaseModel):
     data: dict[str, dict[str, str]]

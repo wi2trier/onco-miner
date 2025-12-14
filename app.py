@@ -5,7 +5,7 @@ import uvicorn
 from fastapi import APIRouter, FastAPI, HTTPException
 from pydantic import BaseModel
 
-from data_transformation import transform_dict
+from data_transformation import transform_dict, add_counts, add_states
 from data_validation import validate_data
 from input_model import InputBody
 from metrics_retrieval import get_metrics
@@ -45,12 +45,21 @@ async def discover_process_model(request: InputBody) -> DiscoveryResponse:
     :param request: Input data as well as necessary parameters and an id that will be returned with the result.
     :return: Calculated Process Model, metrics, creation time and id provided in the request.
     """
+    params = request.parameters
     try:
         validate_data(request.data)
     except (ValueError, TypeError) as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
+    if params.add_counts and params.state_changing_events:
+        raise HTTPException(status_code=400, detail="Can not have states and counts at the same time.")
     event_log = transform_dict(request.data)
-    graph = get_process_model(event_log)
+    if params.add_counts:
+        pm_event_log = add_counts(event_log)
+    elif params.state_changing_events:
+        pm_event_log = add_states(event_log, params.state_changing_events)
+    else:
+        pm_event_log = event_log
+    graph = get_process_model(pm_event_log)
     if request.parameters.n_top_variants:
         metrics = get_metrics(event_log, request.parameters.active_events, request.parameters.n_top_variants)
     else:
@@ -84,4 +93,4 @@ async def get_health() -> HealthResponse:
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8080)
