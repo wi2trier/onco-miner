@@ -5,6 +5,7 @@ import uvicorn
 from fastapi import APIRouter, FastAPI, HTTPException
 from pydantic import BaseModel
 
+from complexity_reduction import reduce_dataframe
 from data_transformation import transform_dict
 from data_validation import validate_data
 from input_model import InputBody
@@ -50,7 +51,11 @@ async def discover_process_model(request: InputBody) -> DiscoveryResponse:
     except (ValueError, TypeError) as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
     event_log = transform_dict(request.data)
-    graph = get_process_model(event_log)
+    if request.parameters.reduce_complexity_by:
+        pm_event_log = reduce_dataframe(event_log, 1 - request.parameters.reduce_complexity_by)
+    else:
+        pm_event_log = event_log
+    graph = get_process_model(pm_event_log)
     if request.parameters.n_top_variants:
         metrics = get_metrics(event_log, request.parameters.active_events, request.parameters.n_top_variants)
     else:
