@@ -1,5 +1,3 @@
-from datetime import datetime, timedelta
-
 import numpy as np
 import pandas as pd
 import pm4py
@@ -74,7 +72,16 @@ def get_event_frequency_distribution(data: pd.DataFrame) -> dict[str, int]:
     return data["concept:name"].value_counts().to_dict()
 
 
-def calculate_weekly_bins(initial_timestamp: datetime, final_timestamp: datetime) -> list[datetime]:
+def get_trace_length_distribution(data: pd.DataFrame) -> dict[str, int]:
+    """
+    Calculates how often each trace length occurred.
+    :param data: Dataframe with 'case:concept:name' containing the trace names.
+    :return: Dictionary with length as key and frequency as value.
+    """
+    return data["case:concept:name"].value_counts().astype(str).value_counts().to_dict()
+
+
+def calculate_weekly_bins(initial_timestamp: pd.Timestamp, final_timestamp: pd.Timestamp) -> list[pd.Timestamp]:
     """
     Calculates the start timestamp (Monday 00:00) for each week occurring in the time frame between the two timestamps.
     The initial timestamp is included in the first week and final timestamp is included in the last week.
@@ -82,16 +89,16 @@ def calculate_weekly_bins(initial_timestamp: datetime, final_timestamp: datetime
     :param final_timestamp: last timestamp.
     :return: List of timestamps.
     """
-    start_of_week = initial_timestamp - timedelta(days=initial_timestamp.weekday())
+    start_of_week: pd.Timestamp = initial_timestamp - pd.Timedelta(days=initial_timestamp.weekday())
     start_of_week.replace(hour=0, minute=0, second=0, microsecond=0)
     week_starts = [start_of_week]
     while start_of_week <= final_timestamp:
         week_starts.append(start_of_week)
-        start_of_week = start_of_week + timedelta(days=7)
+        start_of_week = start_of_week + pd.Timedelta(days=7)
     return week_starts
 
 
-def calculate_monthly_bins(initial_timestamp: datetime, final_timestamp: datetime) -> list[datetime]:
+def calculate_monthly_bins(initial_timestamp: pd.Timestamp, final_timestamp: pd.Timestamp) -> list[pd.Timestamp]:
     """
     Calculates the start timestamp (1st of month, 00:00)
     for each month occurring in the time frame between the two timestamps.
@@ -100,7 +107,7 @@ def calculate_monthly_bins(initial_timestamp: datetime, final_timestamp: datetim
     :param final_timestamp: last timestamp.
     :return: List of timestamps.
     """
-    start_of_month = initial_timestamp - timedelta(days=initial_timestamp.day - 1)
+    start_of_month = initial_timestamp - pd.Timedelta(days=initial_timestamp.day - 1)
     start_of_month.replace(hour=0, minute=0, second=0, microsecond=0)
     month_starts = [start_of_month]
     while start_of_month <= final_timestamp:
@@ -109,7 +116,7 @@ def calculate_monthly_bins(initial_timestamp: datetime, final_timestamp: datetim
     return month_starts
 
 
-def calculate_yearly_bins(initial_timestamp: datetime, final_timestamp: datetime) -> list[datetime]:
+def calculate_yearly_bins(initial_timestamp: pd.Timestamp, final_timestamp: pd.Timestamp) -> list[pd.Timestamp]:
     """
     Calculates the start timestamp (January 1st, 00:00)
     for each week occurring in the time frame between the two timestamps.
@@ -118,7 +125,7 @@ def calculate_yearly_bins(initial_timestamp: datetime, final_timestamp: datetime
     :param final_timestamp: last timestamp.
     :return: List of timestamps.
     """
-    start_of_year = datetime(initial_timestamp.year, 1, 1).replace(tzinfo=utc)
+    start_of_year = pd.Timestamp(year=initial_timestamp.year, month=1, day=1)
     year_starts = []
     while start_of_year <= final_timestamp:
         year_starts.append(start_of_year)
@@ -126,7 +133,7 @@ def calculate_yearly_bins(initial_timestamp: datetime, final_timestamp: datetime
     return year_starts
 
 
-def calculate_bin_values(data: pd.DataFrame, bin_starts: list[datetime],
+def calculate_bin_values(data: pd.DataFrame, bin_starts: list[pd.Timestamp],
                          active_event_parameters: ActiveEventParameters) -> dict[str, int]:
     """
     Calculates the amount of active events for each timeframe between two consecutive timestamps.
@@ -144,8 +151,8 @@ def calculate_bin_values(data: pd.DataFrame, bin_starts: list[datetime],
     n_bins = len(bin_starts)
     active_events = 0
     for i, bin_start in enumerate(bin_starts):
-        bin_end = bin_starts[i + 1] if i < n_bins - 1 else datetime.now().replace(tzinfo=utc)
-        pre_bin_start = bin_starts[i - 1] if i > 0 else bin_start - timedelta(days=1)
+        bin_end = bin_starts[i + 1] if i < n_bins - 1 else pd.Timestamp.now()
+        pre_bin_start = bin_starts[i - 1] if i > 0 else bin_start - pd.Timedelta(days=1)
         bin_data = data[data["time:timestamp"].between(bin_start, bin_end, inclusive="left")]
         pre_bin_data = data[data["time:timestamp"].between(pre_bin_start, bin_start, inclusive="left")]
         active_events += len(bin_data[bin_data["concept:name"].isin(positive_events)]) - len(
@@ -200,6 +207,7 @@ def get_metrics(data: pd.DataFrame, active_event_parameters: ActiveEventParamete
                       top_variants=top_variants_dict, tbe=tbe, max_trace_length=max_trace_length,
                       min_trace_length=min_trace_length,
                       event_frequency_distr=get_event_frequency_distribution(data),
+                      trace_length_distr = get_trace_length_distribution(data),
                       max_trace_duration=max_trace_duration, min_trace_duration=min_trace_duration,
                       active_events=get_binned_occurrences(data, active_event_parameters))
     return metrics

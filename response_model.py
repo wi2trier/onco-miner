@@ -41,6 +41,7 @@ class Metrics(BaseModel):
     min_trace_duration: float
     active_events: ActiveEvents
     event_frequency_distr: dict[str, int]
+    trace_length_distr: dict[str, int]
 
 
 class DiscoveryResponse(BaseModel):
