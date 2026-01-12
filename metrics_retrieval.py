@@ -1,4 +1,3 @@
-
 import numpy as np
 import pandas as pd
 import pm4py
@@ -71,6 +70,15 @@ def get_event_frequency_distribution(data: pd.DataFrame) -> dict[str, int]:
     :return: Dictionary with event as key and frequency as value.
     """
     return data["concept:name"].value_counts().to_dict()
+
+
+def get_trace_length_distribution(data: pd.DataFrame) -> dict[str, int]:
+    """
+    Calculates how often each trace length occurred.
+    :param data: Dataframe with 'case:concept:name' containing the trace names.
+    :return: Dictionary with length as key and frequency as value.
+    """
+    return data["case:concept:name"].value_counts().astype(str).value_counts().to_dict()
 
 
 def calculate_weekly_bins(initial_timestamp: pd.Timestamp, final_timestamp: pd.Timestamp) -> list[pd.Timestamp]:
@@ -199,6 +207,7 @@ def get_metrics(data: pd.DataFrame, active_event_parameters: ActiveEventParamete
                       top_variants=top_variants_dict, tbe=tbe, max_trace_length=max_trace_length,
                       min_trace_length=min_trace_length,
                       event_frequency_distr=get_event_frequency_distribution(data),
+                      trace_length_distr = get_trace_length_distribution(data),
                       max_trace_duration=max_trace_duration, min_trace_duration=min_trace_duration,
                       active_events=get_binned_occurrences(data, active_event_parameters))
     return metrics
