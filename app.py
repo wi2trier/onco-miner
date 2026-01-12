@@ -39,7 +39,7 @@ def distribute_process_model(process_model: DiscoveryResponse) -> ResponseReceiv
 
 
 @app.post("/discover", callbacks=process_model_callback_router.routes)
-async def discover_process_model(request: InputBody) -> DiscoveryResponse:
+def discover_process_model(request: InputBody) -> DiscoveryResponse:
     """
     API request to calculate a Process model and metrics based on the given data.
     :param request: Input data as well as necessary parameters and an id that will be returned with the result.

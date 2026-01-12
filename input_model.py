@@ -9,7 +9,7 @@ class ActiveEventParameters(BaseModel):
 
 class InputParameters(BaseModel):
     active_events: ActiveEventParameters
-    n_top_variants: int | None
+    n_top_variants: int | None = 10
 
 class InputBody(BaseModel):
     data: dict[str, dict[str, str]]

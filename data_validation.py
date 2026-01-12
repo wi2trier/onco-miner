@@ -17,6 +17,9 @@ def _datetime_valid(dt_str: str) -> bool:
         return False
     return True
 
+def _datetime_no_timezone(dt_str: str) -> bool:
+    return len(dt_str.split("+")) == 1
+
 
 def _validate_column_names(data: dict[str, dict[str, str]]) -> None:
     """
@@ -88,6 +91,8 @@ def _validate_value_types(concept_name_dict: dict[str, str], case_concept_name_d
             raise TypeError(f"{value} in time:timestamp has the wrong type. Expected str, got {type(value)}.")
         if not _datetime_valid(value):
             raise ValueError(f"{value} is not valid ISO8601.")
+        if not _datetime_no_timezone(value):
+            raise ValueError(f"{value} should not contain a time zone.")
 
 
 def _validate_sorting(data: dict[str, dict[str, str]]) -> None:
@@ -101,7 +106,7 @@ def _validate_sorting(data: dict[str, dict[str, str]]) -> None:
     grouped_data = loaded_data.groupby("case:concept:name").agg({"time:timestamp": list})
     grouped_data["sorted?"] = grouped_data["time:timestamp"].apply(
         lambda val: all(val[i] <= val[i + 1] for i in range(len(val) - 1)))
-    if False in grouped_data["sorted?"]:
+    if not grouped_data["sorted?"].all():
         raise ValueError("Events are not sorted.")
 
 
