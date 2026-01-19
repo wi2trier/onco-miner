@@ -26,6 +26,29 @@ Transparent and reproducible analysis of real oncology care pathways helps impro
 
 ---
 
+## Architecture
+
+```mermaid
+flowchart TD
+  Client[API client] -->|POST /discover| App[app.py]
+  App --> Validate[data_validation.py]
+  App --> Transform[data_transformation.py]
+
+  App --> Model[process_model_retrieval.py]
+
+  App --> Metrics[metrics_retrieval.py]
+
+  App --> Resp[response_model.py<br/>DiscoveryResponse]
+
+  Input[input_model.py] --> App
+  Input --> Metrics
+
+  App -->|optional callback| Callback[callback_url]
+  App -->|JSON response| Client
+```
+
+---
+
 ## Technical Details
 
 ### Expected input Format
