@@ -33,7 +33,9 @@ def _validate_column_names(data: dict[str, dict[str, str]]) -> None:
         raise ValueError(f"Wrong number of keys. Expected 3, got {len(features)}.")
     for feature in features:
         if feature not in expected_features:
-            raise ValueError(f"Wrong key. Expected {", ".join(expected_features)}, got {feature}.")
+            raise ValueError(
+                f"Wrong key. Expected {', '.join(expected_features)}, got {feature}."
+            )
 
 
 def _validate_column_types(data: dict[str, dict[str, str]]) -> None:
