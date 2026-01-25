@@ -5,7 +5,8 @@ import uvicorn
 from fastapi import APIRouter, FastAPI, HTTPException
 from pydantic import BaseModel
 
-from data_transformation import transform_dict
+from complexity_reduction import reduce_dataframe
+from data_transformation import add_counts, add_states, transform_dict
 from data_validation import validate_data
 from input_model import InputBody
 from metrics_retrieval import get_metrics
@@ -17,7 +18,7 @@ class ResponseReceived(BaseModel):
     ok: bool
 
 
-app = FastAPI(title="PROVIS cnco-miner API",
+app = FastAPI(title="PROVIS onco-miner API",
               description="This API is part of a project"
                           " to provide an process model based view on cancer patient data.",
               version="1.0.0",
@@ -45,16 +46,25 @@ def discover_process_model(request: InputBody) -> DiscoveryResponse:
     :param request: Input data as well as necessary parameters and an id that will be returned with the result.
     :return: Calculated Process Model, metrics, creation time and id provided in the request.
     """
+    params = request.parameters
     try:
         validate_data(request.data)
     except (ValueError, TypeError) as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
-    event_log = transform_dict(request.data)
-    graph = get_process_model(event_log)
+    if params.add_counts and params.state_changing_events:
+        raise HTTPException(status_code=400, detail="Can not have states and counts at the same time.")
+    pm_event_log = transform_dict(request.data)
+    if params.reduce_complexity_by:
+        pm_event_log = reduce_dataframe(pm_event_log, 1 - params.reduce_complexity_by)
+    if params.add_counts:
+        pm_event_log = add_counts(pm_event_log)
+    elif params.state_changing_events:
+        pm_event_log = add_states(pm_event_log, params.state_changing_events)
+    graph = get_process_model(pm_event_log)
     if request.parameters.n_top_variants:
-        metrics = get_metrics(event_log, request.parameters.active_events, request.parameters.n_top_variants)
+        metrics = get_metrics(pm_event_log, request.parameters.active_events, request.parameters.n_top_variants)
     else:
-        metrics = get_metrics(event_log, request.parameters.active_events)
+        metrics = get_metrics(pm_event_log, request.parameters.active_events)
     creation_time = str(datetime.now())
     response = DiscoveryResponse(graph=graph, metrics=metrics, created=creation_time, id="None")
     if request.callback_url is not None:
