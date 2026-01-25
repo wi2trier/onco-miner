@@ -18,7 +18,7 @@ class ResponseReceived(BaseModel):
     ok: bool
 
 
-app = FastAPI(title="PROVIS cnco-miner API",
+app = FastAPI(title="PROVIS onco-miner API",
               description="This API is part of a project"
                           " to provide an process model based view on cancer patient data.",
               version="1.0.0",
@@ -53,20 +53,18 @@ def discover_process_model(request: InputBody) -> DiscoveryResponse:
         raise HTTPException(status_code=400, detail=str(e)) from e
     if params.add_counts and params.state_changing_events:
         raise HTTPException(status_code=400, detail="Can not have states and counts at the same time.")
-    event_log = transform_dict(request.data)
+    pm_event_log = transform_dict(request.data)
     if params.reduce_complexity_by:
-        pm_event_log = reduce_dataframe(event_log, 1 - params.reduce_complexity_by)
-    else:
-        pm_event_log = event_log
+        pm_event_log = reduce_dataframe(pm_event_log, 1 - params.reduce_complexity_by)
     if params.add_counts:
         pm_event_log = add_counts(pm_event_log)
     elif params.state_changing_events:
         pm_event_log = add_states(pm_event_log, params.state_changing_events)
     graph = get_process_model(pm_event_log)
     if request.parameters.n_top_variants:
-        metrics = get_metrics(event_log, request.parameters.active_events, request.parameters.n_top_variants)
+        metrics = get_metrics(pm_event_log, request.parameters.active_events, request.parameters.n_top_variants)
     else:
-        metrics = get_metrics(event_log, request.parameters.active_events)
+        metrics = get_metrics(pm_event_log, request.parameters.active_events)
     creation_time = str(datetime.now())
     response = DiscoveryResponse(graph=graph, metrics=metrics, created=creation_time, id="None")
     if request.callback_url is not None:
