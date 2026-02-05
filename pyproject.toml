@@ -33,6 +33,9 @@ dev = [
   "coverage>=7.6.0",
   "types-PyYAML>=6.0.12",
 ]
+test = [
+  "pytest>=8.0.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/wi2trier/onco-miner"
