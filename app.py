@@ -75,22 +75,16 @@ def discover_process_model(request: InputBody) -> DiscoveryResponse:
     return response
 
 
-@app.get("/config/algorithms")
-async def get_algorithms() -> dict[str, list[str]]:
-    algorithms: list[str] = []
-    return {"algorithms": algorithms}
-
-
 class HealthResponse(BaseModel):
     status: str
-    uptime_s: int
+    timestamp: str
 
 
 @app.get("/health")
 async def get_health() -> HealthResponse:
-    status = ""
-    uptime = 0
-    return HealthResponse(status=status, uptime_s=uptime)
+    status = "Online"
+    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    return HealthResponse(status=status, timestamp=ts)
 
 
 if __name__ == "__main__":

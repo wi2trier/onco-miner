@@ -88,7 +88,10 @@ The Input should be provided as a json dict with the following structure:
                 "negative_events": ["EndEventA"],
                 "singular_events": ["EventB"]
             },
-            "n_top_variants": 10
+            "n_top_variants": 10,
+            "reduce_complexity_by": 0
+            "add_counts": False,
+            "state_changing_events": None,
         }
         "callback_url": "https://example.com/",
         "id": "string"
@@ -117,7 +120,28 @@ _negative_events_ should contain events that describe the ending of a state or a
 _singular_events_ should contain events occurring at a singular moment.
 
 Some metrics are calculated not with all data, but only traces that match the most often occurring variants.
-To set, how many variants should be considered, use _top_variants_.
+To set how many variants should be considered, use _top_variants_.
+
+If you don't want all traces to be included in the calculation,
+but you want to reduce the complexity of the graph and therefore reduce the number of trace variants,
+set _reduce_complexity_by_ to a value between 0 and 1.
+If the value is set to 0.7,
+only traces of the most common variants are kept up unitl these variants span 30% of the overall traces.
+The traces of the least common variant included are kept in full
+so that the number of traces of the reduced dataset may be more than 30% of the original dataset.
+The graph as well as metrics are both caluclated on the reduced data set.
+
+If _add_counts_ is set to True, the events of each trace, grouped by event type, get numbered.
+This means that if one trace has the events [EventA, EventB, EventA, EventC],
+the trace then becomes [EventA_1, EventB_1, EventA_2, EventC_1].
+
+Instead of just numbering the events, one can also declare event types that are considered state changing.
+If this is done, the occurrence of one of these events leads to a state change in the trace.
+Events of the same event type but in a different state are not considered the same.
+If a trace hast the events [EventC, EventA, EventB, EventD, EventA, EventC]
+and the event types EventA and EventB are declared as state changing,
+the trace becomes [EventC_0.0, EventA_1.0, EventB_1.1, EventD_1.1, EventA_2.1, EventC_2.1].
+As you can see, state changes become part of the event names.
 
 Concerning the **callback_url**:
 
@@ -201,6 +225,10 @@ This ID will then be returned with the result.
             "event_frequency_distr":
             {
                 "{event_name}": int,
+            }
+            "trace_length_distr":
+            {
+                "{trace_length}": int,
             }
         }
         "created": str,

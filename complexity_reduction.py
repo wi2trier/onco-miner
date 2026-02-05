@@ -3,6 +3,15 @@ from pm4py.statistics.variants.pandas.get import get_variants_count
 
 
 def reduce_dataframe(data: pd.DataFrame, percentage: float) -> pd.DataFrame:
+    """
+    Removes traces from dataframe until a dataframe with the length
+    of the given percentage of the original dataframe is reached.
+    Removes the traces based on the occurrence rate of their variant (the order of the events occurring in the trace).
+    Often occurring variants are kept.
+    :param data: Dataframe that should be reduced.
+    :param percentage: Percentage of the dataframe that should be kept.
+    :return: Reduced dataframe.
+    """
     data = data.copy()
     n_traces = data.nunique()["case:concept:name"]
     variants: dict[list[str], int] = get_variants_count(data)

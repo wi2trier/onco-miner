@@ -16,6 +16,12 @@ def transform_dict(data: dict[str, dict[str, str]]) -> pd.DataFrame:
 
 
 def add_counts(data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Adds a counter to each event in each trace.
+    Each event type per trace gets its own counter.
+    :param data: Data where the counter is to be added.
+    :return: Data with added counter.
+    """
     data = data.copy()
     data["counts"] = data.groupby(["case:concept:name", "concept:name"]).cumcount() + 1
     data["concept:name"] = data["concept:name"].astype(str) + "_" + data["counts"].astype(str)
@@ -23,6 +29,16 @@ def add_counts(data: pd.DataFrame) -> pd.DataFrame:
 
 
 def add_states(data: pd.DataFrame, state_changing_events: list[str]) -> pd.DataFrame:
+    """
+    Adds states to each event in each trace.
+    State changes are triggered by the state changing events.
+    If there is more than one state changing event, the final events of the traces are combined,
+    ignoring the state the trace is in.
+    This leads to a less scattered graph.
+    :param data: Data where states should be added.
+    :param state_changing_events: Events that trigger a state change and are therefore state defining.
+    :return: Data with added states.
+    """
     data = data.copy()
     data["counts"] = data[data["concept:name"].isin(state_changing_events)].groupby(
         ["case:concept:name", "concept:name"]).cumcount() + 1
@@ -40,6 +56,12 @@ def add_states(data: pd.DataFrame, state_changing_events: list[str]) -> pd.DataF
 
 
 def remove_counts(data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Removes counts from each event in each trace.
+    Works only on dataframes where states or counts where added.
+    :param data: Data where counts are removed.
+    :return: Data without counts.
+    """
     data.loc[:, "concept:name"] = data.loc[:, "concept:name"].str.split("_").str[:-1].str.join("_")
     return data
 
