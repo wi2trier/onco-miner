@@ -49,6 +49,29 @@ flowchart TD
 
 ---
 
+## Docker Setup
+
+Build and start the service with Docker Compose:
+
+```bash
+docker compose up --build
+```
+
+If you already built the image before, you can also run:
+
+```bash
+docker compose up
+```
+
+The API will be reachable at `http://localhost:8000`.
+Healthcheck:
+
+```bash
+curl http://localhost:8000/health
+```
+
+---
+
 ## Technical Details
 
 ### Expected input Format
