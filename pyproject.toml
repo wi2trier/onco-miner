@@ -138,7 +138,16 @@ testpaths = ["tests"]
 # ---------- coverage ----------
 [tool.coverage.run]
 branch = true
-source = ["PALSYN"]
+source = [
+  "app",
+  "complexity_reduction",
+  "data_transformation",
+  "data_validation",
+  "input_model",
+  "metrics_retrieval",
+  "process_model_retrieval",
+  "response_model",
+]
 
 [tool.coverage.report]
 fail_under = 90
