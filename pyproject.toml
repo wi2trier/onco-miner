@@ -41,8 +41,17 @@ test = [
 Homepage = "https://github.com/wi2trier/onco-miner"
 Repository = "https://github.com/wi2trier/onco-miner"
 
-[tool.setuptools.packages.find]
-include = ["onco-miner*"]
+[tool.setuptools]
+py-modules = [
+  "app",
+  "complexity_reduction",
+  "data_transformation",
+  "data_validation",
+  "input_model",
+  "metrics_retrieval",
+  "process_model_retrieval",
+  "response_model",
+]
 
 # ---------- Ruff (linter + formatter) ----------
 [tool.ruff]
