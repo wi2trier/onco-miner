@@ -93,6 +93,7 @@ warn_unused_ignores = true
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 disallow_subclassing_any = false
+exclude = "^(build/|build\\\\)"
 
 [[tool.mypy.overrides]]
 module = [
