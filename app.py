@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 
 import requests
@@ -32,6 +33,8 @@ app = FastAPI(title="PROVIS onco-miner API",
               })
 
 process_model_callback_router = APIRouter()
+
+REQUEST_TIMEOUT_SECONDS = 60
 
 
 @process_model_callback_router.post("{$callback_url}", response_model=ResponseReceived)
@@ -69,8 +72,12 @@ def discover_process_model(request: InputBody) -> DiscoveryResponse:
     response = DiscoveryResponse(graph=graph, metrics=metrics, created=creation_time, id="None")
     if request.callback_url is not None:
         try:
-            requests.post(url=str(request.callback_url), json=response.model_dump(mode="python"))
-        except requests.exceptions.ConnectionError as e:
+            requests.post(
+                url=str(request.callback_url),
+                json=response.model_dump(mode="python"),
+                timeout=REQUEST_TIMEOUT_SECONDS,
+            )
+        except requests.exceptions.RequestException as e:
             raise HTTPException(status_code=500, detail=str(e)) from e
     return response
 
@@ -88,4 +95,6 @@ async def get_health() -> HealthResponse:
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    host = os.getenv("HOST", "127.0.0.1")
+    port = int(os.getenv("PORT", "8000"))
+    uvicorn.run(app, host=host, port=port)
