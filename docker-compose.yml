@@ -1,0 +1,24 @@
+services:
+  onco-miner:
+    build: .
+    ports:
+      - "8000:8000"
+    networks:
+      - onco-net
+      # Beispiel: feste IP vergeben
+      # onco-net:
+      #   ipv4_address: 172.20.0.10
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+networks:
+  onco-net:
+    driver: bridge
+    # Optional: Eine feste IP pro Service vergeben (z. B. unter services.onco-miner.networks).
+    # Beispiel-Subnetz für feste IPs:
+    # ipam:
+    #   config:
+    #     - subnet: 172.20.0.0/16
