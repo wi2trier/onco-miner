@@ -39,7 +39,7 @@ REQUEST_TIMEOUT_SECONDS = 60
 
 @process_model_callback_router.post("{$callback_url}", response_model=ResponseReceived)
 def distribute_process_model(process_model: DiscoveryResponse) -> ResponseReceived:
-    pass
+    return ResponseReceived(ok=True)
 
 
 @app.post("/discover", callbacks=process_model_callback_router.routes)
