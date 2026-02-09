@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: ["main", "master"]
 
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -43,7 +48,7 @@ jobs:
           coverage report
 
       - name: Publish test report
-        if: always()
+        if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         uses: dorny/test-reporter@v1
         with:
           name: Pytest Results (Python ${{ matrix.python-version }})
