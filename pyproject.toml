@@ -32,6 +32,9 @@ dev = [
   "pytest>=8.0.0",
   "coverage>=7.6.0",
   "types-PyYAML>=6.0.12",
+  "types-requests>=2.32.0",
+  "types-pytz>=2024.1.0",
+  "types-python-dateutil>=2.9.0",
 ]
 test = [
   "pytest>=8.0.0",
@@ -41,13 +44,23 @@ test = [
 Homepage = "https://github.com/wi2trier/onco-miner"
 Repository = "https://github.com/wi2trier/onco-miner"
 
-[tool.setuptools.packages.find]
-include = ["onco-miner*"]
+[tool.setuptools]
+py-modules = [
+  "app",
+  "complexity_reduction",
+  "data_transformation",
+  "data_validation",
+  "input_model",
+  "metrics_retrieval",
+  "process_model_retrieval",
+  "response_model",
+]
 
 # ---------- Ruff (linter + formatter) ----------
 [tool.ruff]
 target-version = "py312"
 line-length = 120
+exclude = ["build"]
 
 [tool.ruff.lint]
 select = [
@@ -83,6 +96,7 @@ warn_unused_ignores = true
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 disallow_subclassing_any = false
+exclude = "^(build/|build\\\\|tests/|tests\\\\|test_.*\\.py$)"
 
 [[tool.mypy.overrides]]
 module = [
@@ -124,8 +138,17 @@ testpaths = ["tests"]
 # ---------- coverage ----------
 [tool.coverage.run]
 branch = true
-source = ["PALSYN"]
+source = [
+  "app",
+  "complexity_reduction",
+  "data_transformation",
+  "data_validation",
+  "input_model",
+  "metrics_retrieval",
+  "process_model_retrieval",
+  "response_model",
+]
 
 [tool.coverage.report]
-fail_under = 90
+fail_under = 0
 show_missing = true

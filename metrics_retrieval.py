@@ -1,3 +1,5 @@
+from typing import cast
+
 import numpy as np
 import pandas as pd
 import pm4py
@@ -69,7 +71,7 @@ def get_event_frequency_distribution(data: pd.DataFrame) -> dict[str, int]:
     :param data: Dataframe with 'concept:name' containing the event names.
     :return: Dictionary with event as key and frequency as value.
     """
-    return data["concept:name"].value_counts().to_dict()
+    return cast(dict[str, int], data["concept:name"].value_counts().to_dict())
 
 
 def get_trace_length_distribution(data: pd.DataFrame) -> dict[str, int]:
@@ -78,7 +80,7 @@ def get_trace_length_distribution(data: pd.DataFrame) -> dict[str, int]:
     :param data: Dataframe with 'case:concept:name' containing the trace names.
     :return: Dictionary with length as key and frequency as value.
     """
-    return data["case:concept:name"].value_counts().astype(str).value_counts().to_dict()
+    return cast(dict[str, int], data["case:concept:name"].value_counts().astype(str).value_counts().to_dict())
 
 
 def calculate_weekly_bins(initial_timestamp: pd.Timestamp, final_timestamp: pd.Timestamp) -> list[pd.Timestamp]:
