@@ -8,9 +8,8 @@ RUN addgroup --system app && adduser --system --ingroup app app
 WORKDIR /app
 
 COPY pyproject.toml README.md LICENSE ./
-RUN pip install --no-cache-dir .
-
 COPY . .
+RUN pip install --no-cache-dir .
 RUN chown -R app:app /app
 
 USER app
