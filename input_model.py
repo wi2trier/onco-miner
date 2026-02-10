@@ -9,9 +9,9 @@ class ActiveEventParameters(BaseModel):
 
 class InputParameters(BaseModel):
     active_events: ActiveEventParameters
-    n_top_variants: int | None = 10
-    reduce_complexity_by: float | None = 0
-    add_counts: bool | None = False
+    n_top_variants: int = 10
+    reduce_complexity_by: float = 0
+    add_counts: bool = False
     state_changing_events: list[str] | None = None
     start_node_name: str = "start_node"
     end_node_name: str = "end_node"

@@ -31,13 +31,13 @@ def get_process_model(data: EventLog | pd.DataFrame, start_node_name: str, end_n
         if np.isnan(performance_values["stdev"]):
             performance_values["stdev"] = -1
         frequency_value = frequency_pm[0][el]
-        connection: Connection = Connection(e1=el[0], e2=el[1], frequency=frequency_value,
+        connection = Connection(e1=el[0], e2=el[1], frequency=frequency_value,
                                             median=performance_values["median"], min=performance_values["min"],
                                             max=performance_values["max"], stdev=performance_values["stdev"],
                                             sum=performance_values["sum"], mean=performance_values["mean"])
         result_pm.connections.append(connection)
     for key, val in frequency_pm[2].items():
-        connection: Connection = Connection(e1=key, e2=end_node_name, frequency=val, median= -1, min= -1,
+        connection = Connection(e1=key, e2=end_node_name, frequency=val, median= -1, min= -1,
                                             max= -1, stdev= -1, sum= -1, mean= -1)
         result_pm.connections.append(connection)
     return result_pm
