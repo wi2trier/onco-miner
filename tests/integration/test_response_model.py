@@ -17,9 +17,7 @@ def _sample_response() -> DiscoveryResponse:
                 sum=3.0,
                 mean=1.5,
             )
-        ],
-        start_nodes={"A": 2},
-        end_nodes={"B": 2},
+        ]
     )
     metrics = Metrics(
         n_cases=2,
@@ -128,6 +126,5 @@ def test_discovery_response_accepts_dict_payload():
 
     response = DiscoveryResponse.model_validate(payload)
 
-    assert response.graph.start_nodes["A"] == 1
     assert response.metrics.active_events.weekly["2024-01-01"] == 1
     assert response.metrics.tbe[0].e1 == "A"

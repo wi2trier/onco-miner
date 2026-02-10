@@ -102,7 +102,7 @@ The Input should be provided as a json dict with the following structure:
                 "3": "2025-10-121T12:37:09Z",
                 "4": "2024-08-12T08:27:12Z"
             }
-        }
+        },
         "parameters":
         {
             "active_events":
@@ -112,10 +112,12 @@ The Input should be provided as a json dict with the following structure:
                 "singular_events": ["EventB"]
             },
             "n_top_variants": 10,
-            "reduce_complexity_by": 0
-            "add_counts": False,
-            "state_changing_events": None,
-        }
+            "reduce_complexity_by": 0,
+            "add_counts": false,
+            "state_changing_events": null,
+            "start_node_name": "start_node",
+            "end_node_name": "end_node"
+        },
         "callback_url": "https://example.com/",
         "id": "string"
     }
@@ -166,6 +168,10 @@ and the event types EventA and EventB are declared as state changing,
 the trace becomes [EventC_0.0, EventA_1.0, EventB_1.1, EventD_1.1, EventA_2.1, EventC_2.1].
 As you can see, state changes become part of the event names.
 
+For creation of the process model graph, custom start and end nodes are added.
+Through _start_node_name_ and _end_node_name_, custom names can be given to these nodes.
+As default names "start_node" and "end_node" are used.
+
 Concerning the **callback_url**:
 
 If you want the result graph not only to be returned to the requesting instance, but to another endpoint as well,
@@ -194,14 +200,6 @@ This ID will then be returned with the result.
                     "mean": float
                 }
             ]
-            "start nodes":
-            {
-                "{event_name}": int
-            },
-            "end nodes":
-            {
-                "{event_name}": int
-            },
         }
         "metrics":
         {
