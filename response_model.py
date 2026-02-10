@@ -46,7 +46,7 @@ class DiscoveryResponse(BaseModel):
     graph: Graph
     metrics: Metrics
     created: str
-    id: str
+    id: str | None
 
 
 

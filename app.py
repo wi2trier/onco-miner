@@ -69,7 +69,8 @@ def discover_process_model(request: InputBody) -> DiscoveryResponse:
     else:
         metrics = get_metrics(pm_event_log, params.active_events)
     creation_time = str(datetime.now())
-    response = DiscoveryResponse(graph=graph, metrics=metrics, created=creation_time, id="None" if request.id is None else str(request.id))
+    response = DiscoveryResponse(graph=graph, metrics=metrics, created=creation_time,
+                                 id=None if request.id is None else str(request.id))
     if request.callback_url is not None:
         try:
             requests.post(

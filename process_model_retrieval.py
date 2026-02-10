@@ -3,7 +3,6 @@ import pandas as pd
 import pm4py
 from pm4py.objects.log.obj import EventLog
 
-from input_model import InputParameters
 from response_model import Connection, Graph
 
 
@@ -11,6 +10,8 @@ def get_process_model(data: EventLog | pd.DataFrame, start_node_name: str, end_n
     """
     Calculate directly follows graph with frequency of each graph edge
     as well as time statistics based on the given data.
+    :param end_node_name: name of the node that represents the final node.
+    :param start_node_name: name of the node that represents the first node.
     :param data: Data containing the traces.
     If dataframe, it should have the columns 'case:concept:name', 'concept:name' and 'time:timestamp'.
     :return: DFG with frequency and performance data.
