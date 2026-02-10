@@ -14,8 +14,6 @@ class Connection(BaseModel):
 
 class Graph(BaseModel):
     connections: list[Connection]
-    start_nodes: dict[str, int]
-    end_nodes: dict[str, int]
 
 
 class TimeBetweenEvents(BaseModel):

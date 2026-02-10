@@ -63,13 +63,13 @@ def discover_process_model(request: InputBody) -> DiscoveryResponse:
         pm_event_log = add_counts(pm_event_log)
     elif params.state_changing_events:
         pm_event_log = add_states(pm_event_log, params.state_changing_events)
-    graph = get_process_model(pm_event_log)
+    graph = get_process_model(pm_event_log, params.start_node_name, params.end_node_name)
     if request.parameters.n_top_variants:
-        metrics = get_metrics(pm_event_log, request.parameters.active_events, request.parameters.n_top_variants)
+        metrics = get_metrics(pm_event_log, params.active_events, params.n_top_variants)
     else:
-        metrics = get_metrics(pm_event_log, request.parameters.active_events)
+        metrics = get_metrics(pm_event_log, params.active_events)
     creation_time = str(datetime.now())
-    response = DiscoveryResponse(graph=graph, metrics=metrics, created=creation_time, id="None")
+    response = DiscoveryResponse(graph=graph, metrics=metrics, created=creation_time, id="None" if request.id is None else str(request.id))
     if request.callback_url is not None:
         try:
             requests.post(

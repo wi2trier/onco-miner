@@ -13,6 +13,8 @@ class InputParameters(BaseModel):
     reduce_complexity_by: float | None = 0
     add_counts: bool | None = False
     state_changing_events: list[str] | None = None
+    start_node_name: str = "start_node"
+    end_node_name: str = "end_node"
 
 class InputBody(BaseModel):
     data: dict[str, dict[str, str]]
