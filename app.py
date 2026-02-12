@@ -6,13 +6,14 @@ import uvicorn
 from fastapi import APIRouter, FastAPI, HTTPException
 from pydantic import BaseModel
 
-from complexity_reduction import reduce_dataframe
-from data_transformation import add_counts, add_states, transform_dict
-from data_validation import validate_data
-from input_model import InputBody
-from metrics_retrieval import get_metrics
-from process_model_retrieval import get_process_model
-from response_model import DiscoveryResponse
+from data_handling.complexity_reduction import reduce_dataframe
+from data_handling.data_transformation import add_counts, add_states, transform_dict
+from data_handling.data_validation import validate_data
+from helpers import config_loader
+from model.input_model import InputBody
+from model.response_model import DiscoveryResponse
+from retrieval.metrics_retrieval import get_metrics
+from retrieval.process_model_retrieval import get_process_model
 
 
 class ResponseReceived(BaseModel):
@@ -64,10 +65,7 @@ def discover_process_model(request: InputBody) -> DiscoveryResponse:
     elif params.state_changing_events:
         pm_event_log = add_states(pm_event_log, params.state_changing_events)
     graph = get_process_model(pm_event_log, params.start_node_name, params.end_node_name)
-    if request.parameters.n_top_variants:
-        metrics = get_metrics(pm_event_log, params.active_events, params.n_top_variants)
-    else:
-        metrics = get_metrics(pm_event_log, params.active_events)
+    metrics = get_metrics(pm_event_log, params.active_events, params.n_top_variants)
     creation_time = str(datetime.now())
     response = DiscoveryResponse(graph=graph, metrics=metrics, created=creation_time,
                                  id=None if request.id is None else str(request.id))
@@ -98,4 +96,5 @@ async def get_health() -> HealthResponse:
 if __name__ == "__main__":
     host = os.getenv("HOST", "127.0.0.1")
     port = int(os.getenv("PORT", "8000"))
+    print(config_loader.CONFIG)
     uvicorn.run(app, host=host, port=port)

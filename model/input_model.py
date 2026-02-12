@@ -8,7 +8,7 @@ class ActiveEventParameters(BaseModel):
     singular_events: list[str]
 
 class InputParameters(BaseModel):
-    active_events: ActiveEventParameters
+    active_events: ActiveEventParameters | None = None
     n_top_variants: int = 10
     reduce_complexity_by: float = 0
     add_counts: bool = False

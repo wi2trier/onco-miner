@@ -203,7 +203,7 @@ This ID will then be returned with the result.
         }
         "metrics":
         {
-            "n_cases": int,
+            "n_traces": int,
             "n_events": int,
             "n_variants": int,
             "top_variants":

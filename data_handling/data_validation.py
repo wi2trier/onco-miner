@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from data_transformation import transform_dict
+from data_handling.data_transformation import transform_dict
 
 expected_features = ["concept:name", "case:concept:name", "time:timestamp"]
 

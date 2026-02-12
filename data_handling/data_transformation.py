@@ -67,7 +67,7 @@ def remove_counts(data: pd.DataFrame) -> pd.DataFrame:
 
 
 if __name__ == "__main__":
-    with open('test_logs/sepsis.json') as f:
+    with open('../test_logs/sepsis.json') as f:
         json_data = json.load(f)
     transformed_data = transform_dict(json_data)
     counted_data = remove_counts(add_counts(transformed_data))

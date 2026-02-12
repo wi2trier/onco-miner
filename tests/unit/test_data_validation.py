@@ -1,6 +1,6 @@
 import pytest
 
-from data_validation import validate_data
+from data_handling.data_validation import validate_data
 
 
 def _valid_data():

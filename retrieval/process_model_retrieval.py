@@ -3,7 +3,7 @@ import pandas as pd
 import pm4py
 from pm4py.objects.log.obj import EventLog
 
-from response_model import Connection, Graph
+from model.response_model import Connection, Graph
 
 
 def get_process_model(data: EventLog | pd.DataFrame, start_node_name: str, end_node_name: str) -> Graph:
