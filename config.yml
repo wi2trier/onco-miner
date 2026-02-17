@@ -1,3 +1,13 @@
 exclude:
-#  - tbe
-#  - active_events
+#  - n_traces
+#  - n_events
+#  - n_variants
+#  - top_variants
+  - tbe
+#  - max_trace_length
+#  - min_trace_length
+#  - max_trace_duration
+#  - min_trace_duration
+  - active_events
+#  - event_frequency_distr
+#  - trace_length_distr
