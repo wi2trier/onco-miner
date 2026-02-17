@@ -48,11 +48,11 @@ def get_time_between_events(context: Context) -> list[Connection]:
 
 
 def get_max_trace_length(context: Context) -> int:
-    return context.data["case:concept:name"].value_counts().max()
+    return int(context.data["case:concept:name"].value_counts().max())
 
 
 def get_min_trace_length(context: Context) -> int:
-    return context.data["case:concept:name"].value_counts().min()
+    return int(context.data["case:concept:name"].value_counts().min())
 
 
 def get_min_trace_duration(context: Context) -> float:
@@ -60,7 +60,7 @@ def get_min_trace_duration(context: Context) -> float:
     max_values = context.grouped_data.max()["time:timestamp"]
     difference = max_values - min_values
     min_diff: pd.Timedelta = difference.min()
-    return min_diff.total_seconds()
+    return float(min_diff.total_seconds())
 
 
 def get_max_trace_duration(context: Context) -> float:
@@ -68,7 +68,7 @@ def get_max_trace_duration(context: Context) -> float:
     max_values = context.grouped_data.max()["time:timestamp"]
     difference = max_values - min_values
     max_diff: pd.Timedelta = difference.max()
-    return max_diff.total_seconds()
+    return float(max_diff.total_seconds())
 
 
 def get_event_frequency_distribution(context: Context) -> dict[str, int]:
@@ -77,7 +77,8 @@ def get_event_frequency_distribution(context: Context) -> dict[str, int]:
     :param context: contains precalculated data.
     :return: Dictionary with event as key and frequency as value.
     """
-    return context.data["concept:name"].value_counts().to_dict()
+    distr: dict[str, int] = context.data["concept:name"].value_counts().to_dict()
+    return distr
 
 
 def get_trace_length_distribution(context: Context) -> dict[str, int]:
@@ -86,7 +87,8 @@ def get_trace_length_distribution(context: Context) -> dict[str, int]:
     :param context: contains precalculated data.
     :return: Dictionary with length as key and frequency as value.
     """
-    return context.data["case:concept:name"].value_counts().astype(str).value_counts().to_dict()
+    distr: dict[str, int] = context.data["case:concept:name"].value_counts().to_dict()
+    return distr
 
 
 def calculate_weekly_bins(initial_timestamp: pd.Timestamp, final_timestamp: pd.Timestamp) -> list[pd.Timestamp]:
@@ -199,7 +201,7 @@ def get_n_traces(context: Context) -> int:
     :param context:
     :return: number of traces.
     """
-    return context.data["case:concept:name"].nunique()
+    return int(context.data["case:concept:name"].nunique())
 
 
 def get_n_events(context: Context) -> int:
