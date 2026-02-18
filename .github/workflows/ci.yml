@@ -42,10 +42,9 @@ jobs:
         run: |
           mypy .
 
-      - name: Run tests with coverage
+      - name: Run tests
         run: |
-          coverage run -m pytest --junitxml=test-results/pytest-results.xml
-          coverage report
+          pytest --junitxml=test-results/pytest-results.xml
 
       - name: Publish test report
         if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)

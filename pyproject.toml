@@ -30,7 +30,6 @@ dev = [
   "ruff>=0.6.0",
   "mypy>=1.11.0",
   "pytest>=8.0.0",
-  "coverage>=7.6.0",
   "types-PyYAML>=6.0.12",
   "types-requests>=2.32.0",
   "types-pytz>=2024.1.0",
@@ -136,19 +135,3 @@ addopts = "-ra"
 testpaths = ["tests"]
 
 # ---------- coverage ----------
-[tool.coverage.run]
-branch = true
-source = [
-  "app",
-  "complexity_reduction",
-  "data_transformation",
-  "data_validation",
-  "input_model",
-  "metrics_retrieval",
-  "process_model_retrieval",
-  "response_model",
-]
-
-[tool.coverage.report]
-fail_under = 0
-show_missing = true
