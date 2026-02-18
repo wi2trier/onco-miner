@@ -1,6 +1,6 @@
 import json
 
-from model.response_model import ActiveEvents, Connection, DiscoveryResponse, Graph, Metrics
+from model.response_model import ActiveEvents, Connection, DiscoveryResponse, Graph, Metrics, TopVariant
 
 
 def _sample_response() -> DiscoveryResponse:
@@ -23,7 +23,10 @@ def _sample_response() -> DiscoveryResponse:
         n_traces=2,
         n_events=4,
         n_variants=2,
-        top_variants={"0": ["A", "B"], "1": ["A", "C"]},
+        top_variants={"0": TopVariant(event_sequence=["A,B"], frequency=1, mean_duration=1),
+                      "1": TopVariant(event_sequence=["A", "C"],
+                                      frequency=2,
+                                      mean_duration=1.5)},
         tbe=[
             Connection(
                 e1="A",
@@ -94,7 +97,13 @@ def test_discovery_response_accepts_dict_payload():
             "n_traces": 1,
             "n_events": 2,
             "n_variants": 1,
-            "top_variants": {"0": ["A", "B"]},
+            "top_variants": {
+                "0": {
+                    "event_sequence": ["A", "B"],
+                    "frequency": 1,
+                    "mean_duration": 1.0
+                }
+            },
             "tbe": [
                 {
                     "e1": "A",
