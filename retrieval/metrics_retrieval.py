@@ -9,7 +9,7 @@ from pm4py.statistics.variants.pandas.get import get_variants_count
 
 from helpers.config_loader import CONFIG
 from model.input_model import ActiveEventParameters
-from model.response_model import ActiveEvents, Connection, Metrics
+from model.response_model import ActiveEvents, Connection, Metrics, TopVariant
 
 
 @dataclass
@@ -222,7 +222,7 @@ def get_n_variants(context: Context) -> int:
     return len(context.variants)
 
 
-def get_top_variants(context: Context) -> dict[str, list[str]]:
+def get_top_variants(context: Context) -> dict[str, TopVariant]:
     """
     Creates a dict with the ranking as key and the events defining this variant as value from the top variants provided.
     :param context:
@@ -230,8 +230,12 @@ def get_top_variants(context: Context) -> dict[str, list[str]]:
     """
     top_variants = context.top_variants
     top_variants_dict = {}
+    grouped_data = context.grouped_data
+    agg_data = grouped_data.agg({"concept:name": list, "time:timestamp": list})
+    agg_data["diff"] = pd.to_timedelta(agg_data["time:timestamp"].str[-1] - agg_data["time:timestamp"].str[0]).dt.total_seconds()
     for index, variant in enumerate(top_variants):
-        top_variants_dict[str(index)] = list(variant[0])
+        current: TopVariant = TopVariant(event_sequence = list(variant[0]), frequency = variant[1], mean = agg_data[agg_data["concept:name"].isin([list(variant[0])])]["diff"].mean())
+        top_variants_dict[str(index)] = current
     return top_variants_dict
 
 
