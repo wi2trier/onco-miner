@@ -27,11 +27,16 @@ class ActiveEvents(BaseModel):
     monthly: dict[str, int]
     weekly: dict[str, int]
 
+class TopVariant(BaseModel):
+    event_sequence: list[str]
+    frequency: int
+    mean: float
+
 class Metrics(BaseModel):
     n_traces: int | None = None
     n_events: int | None = None
     n_variants: int | None = None
-    top_variants: dict[str, list[str]] | None = None
+    top_variants: dict[str, TopVariant] | None = None
     tbe: list[Connection] | None = None
     max_trace_length: int | None = None
     min_trace_length: int | None = None
@@ -40,7 +45,6 @@ class Metrics(BaseModel):
     active_events: ActiveEvents | None = None
     event_frequency_distr: dict[str, int] | None = None
     trace_length_distr: dict[str, int] | None = None
-
 
 class DiscoveryResponse(BaseModel):
     graph: Graph
