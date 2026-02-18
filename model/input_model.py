@@ -7,6 +7,7 @@ class ActiveEventParameters(BaseModel):
     negative_events: list[str]
     singular_events: list[str]
 
+
 class InputParameters(BaseModel):
     active_events: ActiveEventParameters | None = None
     n_top_variants: int = 10
@@ -15,6 +16,7 @@ class InputParameters(BaseModel):
     state_changing_events: list[str] | None = None
     start_node_name: str = "start_node"
     end_node_name: str = "end_node"
+
 
 class InputBody(BaseModel):
     data: dict[str, dict[str, str]]
