@@ -30,7 +30,7 @@ class ActiveEvents(BaseModel):
 class TopVariant(BaseModel):
     event_sequence: list[str]
     frequency: int
-    mean: float
+    mean_duration: float
 
 class Metrics(BaseModel):
     n_traces: int | None = None

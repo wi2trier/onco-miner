@@ -225,7 +225,7 @@ After changing the file in the docker container, a restart of the docker contain
                 {
                     "event_sequence": [str],
                     "frequency": int,
-                    "mean": float
+                    "mean_duration": float
                 }
             } | null,
             "tbe":
@@ -302,10 +302,10 @@ A trace variant is defined by the events in a trace and their order, but not the
 
 _top_variants_ is  a dict with the rank of the most often occurring trace variants as key
 ranked by their prevalence with rank 0 being the most frequent.
-The value is another dict that has the keys _event_sequence_, _frequency_ and _mean_.
+The value is another dict that has the keys _event_sequence_, _frequency_ and _mean_duration_.
 The value of _event_sequence_ is the variant defining order of events.
 _frequency_ is the number of traces that match the variant.
-_mean_ is the mean duration of the traces matching the variant.
+_mean_duration_ is the mean duration of the traces matching the variant.
 
 _tbe_ is the time between events only calculated on the traces that match the trace variants of _top_variants_.
 Here, the output is designed the same way as in the graph, but _frequency_ is set to -1 as it is not calculated.

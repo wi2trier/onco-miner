@@ -236,7 +236,7 @@ def get_top_variants(context: Context) -> dict[str, TopVariant]:
         agg_data["time:timestamp"].str[-1] - agg_data["time:timestamp"].str[0]).dt.total_seconds() # type: ignore
     for index, variant in enumerate(top_variants):
         current: TopVariant = TopVariant(event_sequence=list(variant[0]), frequency=variant[1],
-                                         mean=agg_data[agg_data["concept:name"].isin([list(variant[0])])][
+                                         mean_duration=agg_data[agg_data["concept:name"].isin([list(variant[0])])][
                                              "diff"].mean())
         top_variants_dict[str(index)] = current
     return top_variants_dict
