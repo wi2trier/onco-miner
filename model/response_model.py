@@ -28,18 +28,18 @@ class ActiveEvents(BaseModel):
     weekly: dict[str, int]
 
 class Metrics(BaseModel):
-    n_cases: int
-    n_events: int
-    n_variants: int
-    top_variants: dict[str, list[str]]
-    tbe: list[Connection]
-    max_trace_length: int
-    min_trace_length: int
-    max_trace_duration: float
-    min_trace_duration: float
-    active_events: ActiveEvents
-    event_frequency_distr: dict[str, int]
-    trace_length_distr: dict[str, int]
+    n_traces: int | None = None
+    n_events: int | None = None
+    n_variants: int | None = None
+    top_variants: dict[str, list[str]] | None = None
+    tbe: list[Connection] | None = None
+    max_trace_length: int | None = None
+    min_trace_length: int | None = None
+    max_trace_duration: float | None = None
+    min_trace_duration: float | None = None
+    active_events: ActiveEvents | None = None
+    event_frequency_distr: dict[str, int] | None = None
+    trace_length_distr: dict[str, int] | None = None
 
 
 class DiscoveryResponse(BaseModel):

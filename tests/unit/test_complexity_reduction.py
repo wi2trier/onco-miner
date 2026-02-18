@@ -1,6 +1,6 @@
 import pandas as pd
 
-from complexity_reduction import reduce_dataframe
+from data_handling.complexity_reduction import reduce_dataframe
 
 
 def _sample_df() -> pd.DataFrame:

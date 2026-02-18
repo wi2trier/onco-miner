@@ -1,6 +1,6 @@
 import json
 
-from response_model import ActiveEvents, Connection, DiscoveryResponse, Graph, Metrics
+from model.response_model import ActiveEvents, Connection, DiscoveryResponse, Graph, Metrics
 
 
 def _sample_response() -> DiscoveryResponse:
@@ -20,7 +20,7 @@ def _sample_response() -> DiscoveryResponse:
         ]
     )
     metrics = Metrics(
-        n_cases=2,
+        n_traces=2,
         n_events=4,
         n_variants=2,
         top_variants={"0": ["A", "B"], "1": ["A", "C"]},
@@ -65,7 +65,7 @@ def test_discovery_response_roundtrip_with_models():
 
     roundtrip = DiscoveryResponse.model_validate(dumped)
 
-    assert roundtrip.metrics.n_cases == 2
+    assert roundtrip.metrics.n_traces == 2
     assert roundtrip.metrics.n_events == 4
     assert roundtrip.graph.connections
     assert roundtrip.graph.connections[0].e1 == "A"
@@ -91,7 +91,7 @@ def test_discovery_response_accepts_dict_payload():
             "end_nodes": {"B": 1},
         },
         "metrics": {
-            "n_cases": 1,
+            "n_traces": 1,
             "n_events": 2,
             "n_variants": 1,
             "top_variants": {"0": ["A", "B"]},

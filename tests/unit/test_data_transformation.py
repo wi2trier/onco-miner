@@ -1,6 +1,6 @@
 import pandas as pd
 
-from data_transformation import add_counts, add_states, remove_counts, transform_dict
+from data_handling.data_transformation import add_counts, add_states, remove_counts, transform_dict
 
 
 def test_transform_dict_converts_timestamp():

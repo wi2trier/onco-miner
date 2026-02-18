@@ -143,22 +143,26 @@ The values of these dicts should be lists with event names occurring in the data
 _positive_events_ should contain events that describe the beginning of a state or a long-lasting events.
 _negative_events_ should contain events that describe the ending of a state or a long-lasting events.
 _singular_events_ should contain events occurring at a singular moment.
+If no parameters for active events are provided, all occurring events are handled as singular events.
 
 Some metrics are calculated not with all data, but only traces that match the most often occurring variants.
 To set how many variants should be considered, use _top_variants_.
+If no value is provided, the top 10 variants are used.
 
 If you don't want all traces to be included in the calculation,
-but you want to reduce the complexity of the graph and therefore reduce the number of trace variants,
+and you want to reduce the complexity of the graph and therefore reduce the number of trace variants,
 set _reduce_complexity_by_ to a value between 0 and 1.
 If the value is set to 0.7,
 only traces of the most common variants are kept up unitl these variants span 30% of the overall traces.
 The traces of the least common variant included are kept in full
 so that the number of traces of the reduced dataset may be more than 30% of the original dataset.
 The graph as well as metrics are both caluclated on the reduced data set.
+The default value is 0.
 
 If _add_counts_ is set to True, the events of each trace, grouped by event type, get numbered.
 This means that if one trace has the events [EventA, EventB, EventA, EventC],
 the trace then becomes [EventA_1, EventB_1, EventA_2, EventC_1].
+The default value is False.
 
 Instead of just numbering the events, one can also declare event types that are considered state changing.
 If this is done, the occurrence of one of these events leads to a state change in the trace.
@@ -167,6 +171,7 @@ If a trace hast the events [EventC, EventA, EventB, EventD, EventA, EventC]
 and the event types EventA and EventB are declared as state changing,
 the trace becomes [EventC_0.0, EventA_1.0, EventB_1.1, EventD_1.1, EventA_2.1, EventC_2.1].
 As you can see, state changes become part of the event names.
+The default value is that no events are considered state changing.
 
 For creation of the process model graph, custom start and end nodes are added.
 Through _start_node_name_ and _end_node_name_, custom names can be given to these nodes.
@@ -178,8 +183,16 @@ If you want the result graph not only to be returned to the requesting instance,
 you can provide a url where the result construct will be sent.
 
 Concerning the **id**:
-If you want an ID to identify a result, especially if the callback feature ist used, you can provide an ID with the request.
+If you want an ID to identify a result,
+especially if the callback feature ist used, you can provide an ID with the request.
 This ID will then be returned with the result.
+
+### Config File
+
+The config file can be used to exclude metrics from calculation.
+To do so, you just need to remove the hashtag in the respective metric names row.
+When a metric is excluded, instead of a value, null is returned.
+After changing the file in the docker container, a restart of the docker container is required for the change to kick in.
 
 ### Output Format
 
@@ -203,13 +216,13 @@ This ID will then be returned with the result.
         }
         "metrics":
         {
-            "n_cases": int,
-            "n_events": int,
-            "n_variants": int,
+            "n_traces": int | null,
+            "n_events": int | null,
+            "n_variants": int | null,
             "top_variants":
             {
                 "{rank}": [str]
-            },
+            } | null,
             "tbe":
             [
                 {
@@ -223,7 +236,7 @@ This ID will then be returned with the result.
                     "sum": float,
                     "mean": float
                 }
-            ],
+            ] | null,
             "active_events":
             {
                 "yearly":
@@ -238,21 +251,91 @@ This ID will then be returned with the result.
                 {
                     "{start_time}": int
                 }
-            },
-            "max_trace_length": int,
-            "min_trace_length": int,
-            "max_trace_duration": float,
-            "min_trace_duration": float,
+            } | null,
+            "max_trace_length": int | null,
+            "min_trace_length": int | null,
+            "max_trace_duration": float | null,
+            "min_trace_duration": float | null,
             "event_frequency_distr":
             {
                 "{event_name}": int,
-            }
+            } | null,
             "trace_length_distr":
             {
                 "{trace_length}": int,
-            }
+            } | null
         }
         "created": str,
-        "id": str
+        "id": str | null
     }
 
+The output consists of two major parts, the graph and the metrics as well as a timestamp of creation and an ID.
+
+#### The Graph
+The graph consists of connections which represent the directly-follows-graph of the provided data.
+The graph is directed.
+Each connection consists of a tail (_e1_) and a head (_e2_), which both are event names.
+Additionally, each connection has a variety of statistics regarding this connection.
+_Frequency_ is the number of times, the connection exists in the dataset.
+All other statistics are in regard to the time between the head- and the tail event.
+They all have seconds as unit.
+If a statistic could not or was not calculated, -1 is used as filler value as negative values can not occur naturally.
+For example, between the start node of the graph and the events that occur first in traces,
+all statistics regarding time are set to -1 as the start node is artificial.
+Also, _stdev_ can be -1 when a connection only occurs once in the whole dataset.
+
+#### The Metrics
+
+The metrics deliver information about the overall dataset.
+
+_n_traces_ is the number of traces in the dataset.
+
+_n_events_ is the number of events in the dataset.
+
+_n_variants_ is the number of different trace variants that exist in a dataset.
+A trace variant is defined by the events in a trace and their order, but not the duration between events.
+
+_top_variants_ is the most often occurring trace variants ranked by their prevalence with rank 0 being the most frequent.
+
+_tbe_ is the time between events only calculated on the traces that match the trace variants of _top_variants_.
+Here, the output is designed the same way as in the graph, but _frequency_ is set to -1 as it is not calculated.
+Also, no start- and end node is added so no full graph can be formed.
+As before, all metrics have seconds as unit.
+
+_active_events_ provides data about how many events of the data set happen at certain times.
+The output is a dict with the keys _yearly_, _monthly_ and _weekly_.
+The value for the key _yearly_ is another dict with time stamps as keys and integers as keys.
+The timestamps are the first day of each year, from the earliest year events occur to the last.
+The value for each timestamp is the number of active events from the key timestamp (included) to the next one (excluded).
+The value to a matching timestamp can be 0, but not for the first and last timestamp.
+The values for the _weekly_ and _monthly_ keys are built similarly,
+with the timestamps for _monthly_ being the first of the month
+and the timestamp for _weekly_ the first of the week, each at 00:00.
+
+_max_trace_length_ is the amount of events in the trace with the most events.
+
+_min_trace_length_ is the amount of events in the trace with the least events.
+
+_max_trace_duration_ is the duration, in seconds, of the trace whose events span the longest timeframe.
+
+_min_trace_duration_ is the duration in seconds of the trace whose events span the shortest timeframe.
+
+_event_frequency_distr_ is a dict that has event names as keys and integers as values.
+The value represents the number of this specific event in the dataset.
+It is sorted from most to least.
+
+_trace_length_distr_ is a dict that has the number of events per trace as key and the amount of traces with that length as value.
+The key is formatted as a string.
+It is sorted from the most traces (highest value) with that length to the least traces with that length (lowest value).
+
+Through the config file, metrics can be removed from calculation.
+Then, the returned value for that metric is _null_.
+
+#### id
+
+ID is an optional value.
+If an ID was provided in the input, the same ID is returned with the output, if not, it is _null_.
+
+#### created
+
+A timestamp generated after calculation of the graph and the metrics.
