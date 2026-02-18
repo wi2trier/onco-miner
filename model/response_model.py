@@ -12,6 +12,7 @@ class Connection(BaseModel):
     sum: float
     mean: float
 
+
 class Graph(BaseModel):
     connections: list[Connection]
 
@@ -27,10 +28,12 @@ class ActiveEvents(BaseModel):
     monthly: dict[str, int]
     weekly: dict[str, int]
 
+
 class TopVariant(BaseModel):
     event_sequence: list[str]
     frequency: int
     mean_duration: float
+
 
 class Metrics(BaseModel):
     n_traces: int | None = None
@@ -46,11 +49,9 @@ class Metrics(BaseModel):
     event_frequency_distr: dict[str, int] | None = None
     trace_length_distr: dict[str, int] | None = None
 
+
 class DiscoveryResponse(BaseModel):
     graph: Graph
     metrics: Metrics
     created: str
     id: str | None
-
-
-
