@@ -15,7 +15,7 @@ from model.response_model import ActiveEvents, Connection, Metrics, TopVariant
 @dataclass
 class Context:
     data: pd.DataFrame
-    grouped_data: DataFrameGroupBy # type: ignore
+    grouped_data: DataFrameGroupBy
     variants: dict[list[str], int]
     top_variants: list[tuple[list[str], int]]
     active_event_parameters: ActiveEventParameters | None
@@ -233,7 +233,7 @@ def get_top_variants(context: Context) -> dict[str, TopVariant]:
     grouped_data = context.grouped_data
     agg_data = grouped_data.agg({"concept:name": list, "time:timestamp": list})
     agg_data["diff"] = pd.to_timedelta(
-        agg_data["time:timestamp"].str[-1] - agg_data["time:timestamp"].str[0]).dt.total_seconds() # type: ignore
+        agg_data["time:timestamp"].str[-1] - agg_data["time:timestamp"].str[0]).dt.total_seconds()
     for index, variant in enumerate(top_variants):
         current: TopVariant = TopVariant(event_sequence=list(variant[0]), frequency=variant[1],
                                          mean_duration=agg_data[agg_data["concept:name"].isin([list(variant[0])])][
