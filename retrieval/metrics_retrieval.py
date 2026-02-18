@@ -87,7 +87,7 @@ def get_trace_length_distribution(context: Context) -> dict[str, int]:
     :param context: contains precalculated data.
     :return: Dictionary with length as key and frequency as value.
     """
-    distr: dict[str, int] = context.data["case:concept:name"].value_counts().to_dict()
+    distr: dict[str, int] = context.data["case:concept:name"].value_counts().astype(str).value_counts().to_dict()
     return distr
 
 
