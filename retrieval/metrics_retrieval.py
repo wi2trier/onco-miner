@@ -1,9 +1,13 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
+from typing import Literal, cast
 
 import numpy as np
 import pandas as pd
 import pm4py
 from dateutil.relativedelta import relativedelta
+from pandas._typing import Scalar
 from pandas.core.groupby import DataFrameGroupBy
 from pm4py.statistics.variants.pandas.get import get_variants_count
 
@@ -15,7 +19,7 @@ from model.response_model import ActiveEvents, Connection, Metrics, TopVariant
 @dataclass
 class Context:
     data: pd.DataFrame
-    grouped_data: DataFrameGroupBy
+    grouped_data: DataFrameGroupBy[Scalar, Literal[False]]
     variants: dict[list[str], int]
     top_variants: list[tuple[list[str], int]]
     active_event_parameters: ActiveEventParameters | None
@@ -232,8 +236,11 @@ def get_top_variants(context: Context) -> dict[str, TopVariant]:
     top_variants_dict = {}
     grouped_data = context.grouped_data
     agg_data = grouped_data.agg({"concept:name": list, "time:timestamp": list})
-    agg_data["diff"] = pd.to_timedelta(
-        agg_data["time:timestamp"].str[-1] - agg_data["time:timestamp"].str[0]).dt.total_seconds()
+    timestamp_sequences = cast(list[list[pd.Timestamp]], agg_data["time:timestamp"].tolist())
+    agg_data["diff"] = [
+        float((timestamps[-1] - timestamps[0]).total_seconds())
+        for timestamps in timestamp_sequences
+    ]
     for index, variant in enumerate(top_variants):
         current: TopVariant = TopVariant(event_sequence=list(variant[0]), frequency=variant[1],
                                          mean_duration=agg_data[agg_data["concept:name"].isin([list(variant[0])])][

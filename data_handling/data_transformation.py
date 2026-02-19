@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -67,7 +68,8 @@ def remove_counts(data: pd.DataFrame) -> pd.DataFrame:
 
 
 if __name__ == "__main__":
-    with open('../test_logs/sepsis.json') as f:
+    data_path = Path(__file__).resolve().parents[1] / "tests" / "test_logs" / "sepsis.json"
+    with data_path.open() as f:
         json_data = json.load(f)
     transformed_data = transform_dict(json_data)
     counted_data = remove_counts(add_counts(transformed_data))
