@@ -1,4 +1,7 @@
+import json
+from collections import Counter
 from datetime import datetime
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 
@@ -100,3 +103,55 @@ def test_discover_posts_callback(sample_data, monkeypatch):
     assert calls[0]["url"] == "https://example.com/callback"
     assert calls[0]["timeout"] == app_module.REQUEST_TIMEOUT_SECONDS
     assert "graph" in calls[0]["json"]
+
+
+def test_discover_with_sepsis_log():
+    client = TestClient(app_module.app)
+
+    data_path = Path(__file__).resolve().parents[1] / "test_logs" / "sepsis.json"
+    with data_path.open() as file:
+        sepsis_data = json.load(file)
+
+    event_names = list(sepsis_data.get("concept:name", {}).values())
+    top_events = [name for name, _ in Counter(event_names).most_common(3)]
+
+    payload = {
+        "data": sepsis_data,
+        "parameters": {
+            "active_events": {
+                "positive_events": [],
+                "negative_events": [],
+                "singular_events": top_events,
+            },
+            "n_top_variants": 10,
+            "reduce_complexity_by": 0,
+            "add_counts": False,
+            "state_changing_events": None,
+        },
+        "callback_url": None,
+        "id": "test-sepsis",
+    }
+
+    response = client.post("/discover", json=payload)
+
+    assert response.status_code == 200
+
+    result = response.json()
+    assert result["id"] == "test-sepsis"
+    datetime.fromisoformat(result["created"])
+    assert result["graph"]["connections"]
+
+    metrics = result["metrics"]
+    assert metrics["n_events"] == len(sepsis_data["concept:name"])
+    assert metrics["n_traces"] == len(set(sepsis_data["case:concept:name"].values()))
+    assert metrics["n_variants"] > 0
+
+    if "top_variants" in CONFIG["exclude"]:
+        assert metrics["top_variants"] is None
+    else:
+        assert 0 < len(metrics["top_variants"]) <= 10
+
+    if "active_events" in CONFIG["exclude"]:
+        assert metrics["active_events"] is None
+    else:
+        assert set(metrics["active_events"]) == {"yearly", "monthly", "weekly"}
