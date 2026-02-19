@@ -1,9 +1,11 @@
 import json
 from collections import Counter
+from pathlib import Path
 
 import requests
 
-with open("test_logs/sepsis.json") as f:
+data_path = Path(__file__).resolve().parent / "tests" / "test_logs" / "sepsis.json"
+with data_path.open() as f:
     json_data = json.load(f)
 
 event_names = list(json_data.get("concept:name", {}).values())

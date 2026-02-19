@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 from data_handling.data_transformation import transform_dict
 from data_handling.data_validation import validate_data
@@ -13,7 +14,8 @@ def get_process_model(data):
 
 
 if __name__ == "__main__":
-    with open('test_logs/sepsis.json') as f:
+    data_path = Path(__file__).resolve().parent / "tests" / "test_logs" / "sepsis.json"
+    with data_path.open() as f:
         json_data = json.load(f)
     pm = get_process_model(json_data)
     print(get_process_model(json_data))
