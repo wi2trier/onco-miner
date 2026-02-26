@@ -1,5 +1,7 @@
 from datetime import datetime
 
+import pandas as pd
+
 from data_handling.data_transformation import transform_dict
 
 expected_features = ["concept:name", "case:concept:name", "time:timestamp"]
@@ -105,10 +107,14 @@ def _validate_sorting(data: dict[str, dict[str, str]]) -> None:
     :return:
     """
     loaded_data = transform_dict(data)[["case:concept:name", "time:timestamp"]]
-    grouped_data = loaded_data.groupby("case:concept:name").agg({"time:timestamp": list})
-    grouped_data["sorted?"] = grouped_data["time:timestamp"].apply(
-        lambda val: all(val[i] <= val[i + 1] for i in range(len(val) - 1)))
-    if not grouped_data["sorted?"].all():
+    if not (
+            loaded_data
+                    .groupby("case:concept:name")["time:timestamp"]
+                    .diff()
+                    .dropna()
+                    .ge(pd.Timedelta(0))
+                    .all()
+    ):
         raise ValueError("Events are not sorted.")
 
 
