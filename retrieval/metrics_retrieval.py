@@ -1,3 +1,4 @@
+import math
 from dataclasses import dataclass
 
 import numpy as np
@@ -56,16 +57,16 @@ def get_min_trace_length(context: Context) -> int:
 
 
 def get_min_trace_duration(context: Context) -> float:
-    min_values = context.grouped_data.min()["time:timestamp"]
-    max_values = context.grouped_data.max()["time:timestamp"]
+    min_values = context.grouped_data.first()["time:timestamp"]
+    max_values = context.grouped_data.last()["time:timestamp"]
     difference = max_values - min_values
     min_diff: pd.Timedelta = difference.min()
     return float(min_diff.total_seconds())
 
 
 def get_max_trace_duration(context: Context) -> float:
-    min_values = context.grouped_data.min()["time:timestamp"]
-    max_values = context.grouped_data.max()["time:timestamp"]
+    min_values = context.grouped_data.first()["time:timestamp"]
+    max_values = context.grouped_data.last()["time:timestamp"]
     difference = max_values - min_values
     max_diff: pd.Timedelta = difference.max()
     return float(max_diff.total_seconds())
@@ -231,13 +232,12 @@ def get_top_variants(context: Context) -> dict[str, TopVariant]:
     top_variants = context.top_variants
     top_variants_dict = {}
     grouped_data = context.grouped_data
-    agg_data = grouped_data.agg({"concept:name": list, "time:timestamp": list})
-    agg_data["diff"] = pd.to_timedelta(
-        agg_data["time:timestamp"].str[-1] - agg_data["time:timestamp"].str[0]).dt.total_seconds()
+    agg_data = grouped_data.agg({"concept:name": list, "time:timestamp": "first"})
+    agg_data["diff"] = context.grouped_data.last()["time:timestamp"] - context.grouped_data.first()["time:timestamp"]
     for index, variant in enumerate(top_variants):
         current: TopVariant = TopVariant(event_sequence=list(variant[0]), frequency=variant[1],
                                          mean_duration=agg_data[agg_data["concept:name"].isin([list(variant[0])])][
-                                             "diff"].mean())
+                                             "diff"].mean().total_seconds())
         top_variants_dict[str(index)] = current
     return top_variants_dict
 
