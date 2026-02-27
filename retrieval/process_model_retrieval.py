@@ -16,9 +16,11 @@ def get_process_model(data: EventLog | pd.DataFrame, start_node_name: str, end_n
     If dataframe, it should have the columns 'case:concept:name', 'concept:name' and 'time:timestamp'.
     :return: DFG with frequency and performance data.
     """
-    data = data.copy()
-    performance_pm = pm4py.discovery.discover_performance_dfg(data)
-    frequency_pm = pm4py.discovery.discover_dfg(data)
+    pm_input: EventLog | pd.DataFrame = data
+    if isinstance(data, pd.DataFrame) and "start_timestamp" not in data.columns:
+        pm_input = data.assign(start_timestamp=data["time:timestamp"])
+    performance_pm = pm4py.discovery.discover_performance_dfg(pm_input)
+    frequency_pm = pm4py.discovery.discover_dfg(pm_input)
     if performance_pm[1] != frequency_pm[1] or performance_pm[2] != frequency_pm[2]:
         raise Exception("Generated Graphs are not the same.")
     result_pm: Graph = Graph(connections=[])

@@ -16,10 +16,13 @@ from model.response_model import ActiveEvents, Connection, Metrics, TopVariant
 @dataclass
 class Context:
     data: pd.DataFrame
-    grouped_data: DataFrameGroupBy
-    variants: dict[list[str], int]
-    top_variants: list[tuple[list[str], int]]
+    grouped_data: DataFrameGroupBy | None
+    variants: dict[list[str], int] | None
+    top_variants: list[tuple[list[str], int]] | None
     active_event_parameters: ActiveEventParameters | None
+    trace_lengths: pd.Series | None
+    trace_durations: pd.Series | None
+    variant_mean_durations: pd.Series | None
 
 
 def get_time_between_events(context: Context) -> list[Connection]:
@@ -28,8 +31,11 @@ def get_time_between_events(context: Context) -> list[Connection]:
     :param context: contains precalculated data.
     :return: list of edges with statistics between events of the top variants.
     """
+    grouped_data = context.grouped_data
     top_variants = context.top_variants
-    agg_data = context.grouped_data.agg({"concept:name": list, "time:timestamp": list})
+    if grouped_data is None or top_variants is None:
+        raise RuntimeError("Missing grouped_data or top_variants for tbe metric.")
+    agg_data = grouped_data.agg({"concept:name": list, "time:timestamp": list})
     data: pd.DataFrame = context.data
     top_variants_list = [list(x[0]) for x in top_variants]
     relevant_traces = agg_data[agg_data["concept:name"].isin(top_variants_list)]["case:concept:name"]
@@ -49,26 +55,32 @@ def get_time_between_events(context: Context) -> list[Connection]:
 
 
 def get_max_trace_length(context: Context) -> int:
-    return int(context.data["case:concept:name"].value_counts().max())
+    trace_lengths = context.trace_lengths
+    if trace_lengths is None:
+        raise RuntimeError("Missing trace_lengths for max_trace_length metric.")
+    return int(trace_lengths.max())
 
 
 def get_min_trace_length(context: Context) -> int:
-    return int(context.data["case:concept:name"].value_counts().min())
+    trace_lengths = context.trace_lengths
+    if trace_lengths is None:
+        raise RuntimeError("Missing trace_lengths for min_trace_length metric.")
+    return int(trace_lengths.min())
 
 
 def get_min_trace_duration(context: Context) -> float:
-    min_values = context.grouped_data.first()["time:timestamp"]
-    max_values = context.grouped_data.last()["time:timestamp"]
-    difference = max_values - min_values
-    min_diff: pd.Timedelta = difference.min()
+    trace_durations = context.trace_durations
+    if trace_durations is None:
+        raise RuntimeError("Missing trace_durations for min_trace_duration metric.")
+    min_diff: pd.Timedelta = trace_durations.min()
     return float(min_diff.total_seconds())
 
 
 def get_max_trace_duration(context: Context) -> float:
-    min_values = context.grouped_data.first()["time:timestamp"]
-    max_values = context.grouped_data.last()["time:timestamp"]
-    difference = max_values - min_values
-    max_diff: pd.Timedelta = difference.max()
+    trace_durations = context.trace_durations
+    if trace_durations is None:
+        raise RuntimeError("Missing trace_durations for max_trace_duration metric.")
+    max_diff: pd.Timedelta = trace_durations.max()
     return float(max_diff.total_seconds())
 
 
@@ -88,7 +100,10 @@ def get_trace_length_distribution(context: Context) -> dict[str, int]:
     :param context: contains precalculated data.
     :return: Dictionary with length as key and frequency as value.
     """
-    distr: dict[str, int] = context.data["case:concept:name"].value_counts().astype(str).value_counts().to_dict()
+    trace_lengths = context.trace_lengths
+    if trace_lengths is None:
+        raise RuntimeError("Missing trace_lengths for trace_length_distr metric.")
+    distr: dict[str, int] = trace_lengths.astype(str).value_counts().to_dict()
     return distr
 
 
@@ -220,7 +235,10 @@ def get_n_variants(context: Context) -> int:
     :param context:
     :return: number of variants.
     """
-    return len(context.variants)
+    variants = context.variants
+    if variants is None:
+        raise RuntimeError("Missing variants for n_variants metric.")
+    return len(variants)
 
 
 def get_top_variants(context: Context) -> dict[str, TopVariant]:
@@ -230,14 +248,15 @@ def get_top_variants(context: Context) -> dict[str, TopVariant]:
     :return: dict.
     """
     top_variants = context.top_variants
+    variant_mean_durations = context.variant_mean_durations
+    if top_variants is None or variant_mean_durations is None:
+        raise RuntimeError("Missing top_variants or variant_mean_durations for top_variants metric.")
     top_variants_dict = {}
-    grouped_data = context.grouped_data
-    agg_data = grouped_data.agg({"concept:name": list, "time:timestamp": "first"})
-    agg_data["diff"] = context.grouped_data.last()["time:timestamp"] - context.grouped_data.first()["time:timestamp"]
     for index, variant in enumerate(top_variants):
+        variant_key = tuple(variant[0])
+        mean_duration = variant_mean_durations[variant_key]
         current: TopVariant = TopVariant(event_sequence=list(variant[0]), frequency=variant[1],
-                                         mean_duration=agg_data[agg_data["concept:name"].isin([list(variant[0])])][
-                                             "diff"].mean().total_seconds())
+                                         mean_duration=mean_duration.total_seconds())
         top_variants_dict[str(index)] = current
     return top_variants_dict
 
@@ -269,18 +288,50 @@ def get_metrics(data: pd.DataFrame, active_event_parameters: ActiveEventParamete
     :param n_top_variants: Amount of top variants that should be included in the variant dependent metrics.
     :return: calculated metrics.
     """
-    grouped_data = data.groupby("case:concept:name", as_index=False)
-    variants: dict[list[str], int] = get_variants_count(data)
-    top_variants: list[tuple[list[str], int]] = list(sorted(variants.items(), key=lambda item: item[1], reverse=True))[
-        0:n_top_variants]
+    excluded_metrics = set(CONFIG["exclude"])
+    included_metrics = [field for field in Metrics.model_fields.keys() if field not in excluded_metrics]
+
+    need_top_variants = any(field in included_metrics for field in ("top_variants", "tbe"))
+    need_variants = "n_variants" in included_metrics or need_top_variants
+    need_grouped_data = "tbe" in included_metrics
+    need_trace_lengths = any(field in included_metrics for field in
+                             ("max_trace_length", "min_trace_length", "trace_length_distr"))
+    need_trace_durations = any(field in included_metrics for field in
+                               ("max_trace_duration", "min_trace_duration", "top_variants"))
+    need_variant_mean_durations = "top_variants" in included_metrics
+    need_grouped_data_indexed = need_trace_lengths or need_trace_durations or need_variant_mean_durations
+
+    grouped_data = data.groupby("case:concept:name", as_index=False) if need_grouped_data else None
+    grouped_data_indexed = data.groupby("case:concept:name") if need_grouped_data_indexed else None
+
+    variants = get_variants_count(data) if need_variants else None
+    top_variants: list[tuple[list[str], int]] | None = None
+    if need_top_variants and variants is not None:
+        top_variants = list(sorted(variants.items(), key=lambda item: item[1], reverse=True))[0:n_top_variants]
+
+    trace_lengths = grouped_data_indexed.size() if need_trace_lengths and grouped_data_indexed is not None else None
+
+    trace_durations = None
+    if need_trace_durations and grouped_data_indexed is not None:
+        trace_start_times = grouped_data_indexed["time:timestamp"].first()
+        trace_end_times = grouped_data_indexed["time:timestamp"].last()
+        trace_durations = trace_end_times - trace_start_times
+
+    variant_mean_durations = None
+    if need_variant_mean_durations and grouped_data_indexed is not None and trace_durations is not None:
+        trace_variants = grouped_data_indexed["concept:name"].agg(list)
+        variant_mean_durations = trace_durations.groupby(trace_variants.map(tuple)).mean()
     context = Context(data=data,
                       grouped_data=grouped_data,
                       active_event_parameters=active_event_parameters,
                       variants=variants,
-                      top_variants=top_variants
+                      top_variants=top_variants,
+                      trace_lengths=trace_lengths,
+                      trace_durations=trace_durations,
+                      variant_mean_durations=variant_mean_durations,
                       )
     values = {
-        field: None if field in CONFIG["exclude"]
+        field: None if field in excluded_metrics
         else metrics[field](context)
         for field in Metrics.model_fields.keys()
     }
