@@ -40,6 +40,7 @@ def add_states(data: pd.DataFrame, state_changing_events: list[str]) -> pd.DataF
     :return: Data with added states.
     """
     data = data.copy()
+    data = data.sort_values(by=["case:concept:name"])
     data["counts"] = data[data["concept:name"].isin(state_changing_events)].groupby(
         ["case:concept:name", "concept:name"]).cumcount() + 1
     state_frame = pd.get_dummies(data["concept:name"]).mul(data["counts"], axis=0).replace(0, np.nan)
