@@ -349,3 +349,18 @@ If an ID was provided in the input, the same ID is returned with the output, if 
 #### created
 
 A timestamp generated after calculation of the graph and the metrics.
+
+## Performance
+
+For performance testing, a docker container was created per the description above.
+Then, 10 requests per packet were sent with different data packages, leading to the results below.
+For testing, default parameters were used.
+<img src="docker_run.jpg">
+Docker container and client ran on the same virtual machine.
+The VM had 24 cores with a single core speed of 2.85 GHz.
+128 GB of ram were available, but only around 4 were used.
+It ran x64 Windows 11.
+Tests on other machines showed that performance is highly dependent on single core performance, so faster machines should
+lead to increased performance with similarly sized data packages.
+
+The performance seems to be linear with increasing data set sizes.
