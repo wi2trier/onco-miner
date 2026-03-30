@@ -364,3 +364,6 @@ Tests on other machines showed that performance is highly dependent on single co
 lead to increased performance with similarly sized data packages.
 
 The performance seems to be linear with increasing data set sizes.
+
+If you want to increase the servers performance of the server when handling multiple simultaneous requests, you can change the dockerfile to use multiple workers.
+Proceed as described in the comment in the dockerfile. Depending on the performance of your server, you might need to adjust the parameters to match your usecase.
