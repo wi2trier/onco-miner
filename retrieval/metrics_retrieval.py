@@ -1,10 +1,14 @@
 import math
+from __future__ import annotations
+
 from dataclasses import dataclass
+from typing import Literal, cast
 
 import numpy as np
 import pandas as pd
 import pm4py
 from dateutil.relativedelta import relativedelta
+from pandas._typing import Scalar
 from pandas.core.groupby import DataFrameGroupBy
 from pm4py.statistics.variants.pandas.get import get_variants_count
 
@@ -16,7 +20,7 @@ from model.response_model import ActiveEvents, Connection, Metrics, TopVariant
 @dataclass
 class Context:
     data: pd.DataFrame
-    grouped_data: DataFrameGroupBy | None
+    grouped_data: DataFrameGroupBy[Scalar, Literal[False]] | None
     variants: dict[list[str], int] | None
     top_variants: list[tuple[list[str], int]] | None
     active_event_parameters: ActiveEventParameters | None

@@ -72,6 +72,23 @@ curl http://localhost:8000/health
 
 ---
 
+## Local Setup
+
+Dependencies are defined in `pyproject.toml` 
+Install the package:
+
+```bash
+pip install .
+```
+
+For development tooling:
+
+```bash
+pip install -e .[dev]
+```
+
+---
+
 ## Technical Details
 
 ### Expected input Format
