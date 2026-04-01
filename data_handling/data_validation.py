@@ -1,5 +1,7 @@
 from datetime import datetime
 
+import pandas as pd
+
 from data_handling.data_transformation import transform_dict
 
 expected_features = ["concept:name", "case:concept:name", "time:timestamp"]
@@ -97,26 +99,30 @@ def _validate_value_types(concept_name_dict: dict[str, str], case_concept_name_d
             raise ValueError(f"{value} should not contain a time zone.")
 
 
-def _validate_sorting(data: dict[str, dict[str, str]]) -> None:
+def _validate_sorting(loaded_data: pd.DataFrame) -> None:
     """
-    Validates that the rows of the data frame built from the given data is sorted within each trace
+    Validates that the rows of the provided data frame are sorted within each trace
     (defined by case:concept:names).
-    :param data: Dictionary of data to validate.
+    :param loaded_data: Transformed dataframe to validate.
     :return:
     """
-    loaded_data = transform_dict(data)[["case:concept:name", "time:timestamp"]]
-    grouped_data = loaded_data.groupby("case:concept:name").agg({"time:timestamp": list})
-    grouped_data["sorted?"] = grouped_data["time:timestamp"].apply(
-        lambda val: all(val[i] <= val[i + 1] for i in range(len(val) - 1)))
-    if not grouped_data["sorted?"].all():
+    loaded_data = loaded_data[["case:concept:name", "time:timestamp"]]
+    if not (
+            loaded_data
+                    .groupby("case:concept:name")["time:timestamp"]
+                    .diff()
+                    .dropna()
+                    .ge(pd.Timedelta(0))
+                    .all()
+    ):
         raise ValueError("Events are not sorted.")
 
 
-def validate_data(data: dict[str, dict[str, str]]) -> None:
+def validate_data(data: dict[str, dict[str, str]]) -> pd.DataFrame:
     """
     Checks if the data matches the expected format.
     :param data: Data to be validated.
-    :return:
+    :return: Transformed data as dataframe.
     """
     _validate_column_names(data)
     _validate_column_types(data)
@@ -125,4 +131,6 @@ def validate_data(data: dict[str, dict[str, str]]) -> None:
     time_timestamp_dict = data["time:timestamp"]
     _validate_indices(data, concept_name_dict, case_concept_name_dict, time_timestamp_dict)
     _validate_value_types(concept_name_dict, case_concept_name_dict, time_timestamp_dict)
-    _validate_sorting(data)
+    loaded_data = transform_dict(data)
+    _validate_sorting(loaded_data)
+    return loaded_data

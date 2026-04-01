@@ -12,7 +12,6 @@ def reduce_dataframe(data: pd.DataFrame, percentage: float) -> pd.DataFrame:
     :param percentage: Percentage of the dataframe that should be kept.
     :return: Reduced dataframe.
     """
-    data = data.copy()
     n_traces = data.nunique()["case:concept:name"]
     variants: dict[list[str], int] = get_variants_count(data)
     top_variants: list[tuple[list[str], int]] = list(sorted(variants.items(), key=lambda item: item[1], reverse=True))
@@ -25,7 +24,7 @@ def reduce_dataframe(data: pd.DataFrame, percentage: float) -> pd.DataFrame:
         needed_variants.append(variant[0])
         counter += variant[1]
     needed_variants = [list(x) for x in needed_variants]
-    grouped_data = data.groupby("case:concept:name", as_index=False).agg({"concept:name": list, "time:timestamp": list})
+    grouped_data = data.groupby("case:concept:name", as_index=False).agg({"concept:name": list})
     relevant_traces = grouped_data[grouped_data["concept:name"].isin(needed_variants)]["case:concept:name"]
     relevant_data = data[data["case:concept:name"].isin(relevant_traces)]
     return relevant_data

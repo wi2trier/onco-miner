@@ -7,7 +7,7 @@ from fastapi import APIRouter, FastAPI, HTTPException
 from pydantic import BaseModel
 
 from data_handling.complexity_reduction import reduce_dataframe
-from data_handling.data_transformation import add_counts, add_states, transform_dict
+from data_handling.data_transformation import add_counts, add_states
 from data_handling.data_validation import validate_data
 from helpers import config_loader
 from model.input_model import InputBody
@@ -52,12 +52,11 @@ def discover_process_model(request: InputBody) -> DiscoveryResponse:
     """
     params = request.parameters
     try:
-        validate_data(request.data)
+        pm_event_log = validate_data(request.data)
     except (ValueError, TypeError) as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
     if params.add_counts and params.state_changing_events:
         raise HTTPException(status_code=400, detail="Can not have states and counts at the same time.")
-    pm_event_log = transform_dict(request.data)
     if params.reduce_complexity_by:
         pm_event_log = reduce_dataframe(pm_event_log, 1 - params.reduce_complexity_by)
     if params.add_counts:

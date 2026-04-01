@@ -21,3 +21,6 @@ USER app
 EXPOSE 8000
 
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+# for multiple (4) workers, add
+#, "--workers", "4", "--timeout-worker-healthcheck", "100"
+#to the command
